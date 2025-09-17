@@ -1,0 +1,67 @@
+n# Node
+# Ignore node_modules in any subfolder
+**/out/
+**/node_modules/
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+
+# Build
+dist/
+build/
+.out/
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# VSCode
+.vscode/
+.history/
+
+# Environment
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Yarn Berry
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/patches
+
+# JetBrains
+.idea/
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Coverage
+coverage/
+
+# Misc
+*.bak
+*.tmp
+
+# Webview / Vite
+node_modules/.vite
+
+# Extension build
+extension/dist
+
+# Lockfiles for other package managers
+yarn.lock
+
+# Ignore generated webview build folder
+webview/dist
