@@ -43,12 +43,12 @@ function InnerApp() {
 							<JiraFetch />
 						</div>
 						<div className="flex items-center space-x-3">
-							<button onClick={restoreRefined} className="btn-primary text-sm">
+							<button onClick={restoreRefined} className="btn-primary text-sm w-24">
 								Restore
 							</button>
-							<button className="btn-primary text-sm">Refine</button>
-							<button className="btn-primary text-sm">Plan</button>
-							<button className="btn-primary text-sm">Execute</button>
+							<button className="btn-primary text-sm w-24">Refine</button>
+							<button className="btn-primary text-sm w-24">Plan</button>
+							<button className="btn-primary text-sm w-24">Execute</button>
 						</div>
 					</div>
 				</div>
@@ -56,16 +56,6 @@ function InnerApp() {
 				{/* Main Content */}
 				<div className="animate-slide-in">
 					<RefinementPage />
-				</div>
-
-				{/* Action Button */}
-				<div className="text-center mt-8">
-					<button
-						onClick={handleClick}
-						className="btn-accent text-sm px-6 py-2 transform hover:scale-102 transition-transform duration-150"
-					>
-						Refine Jira Story
-					</button>
 				</div>
 			</div>
 		</div>

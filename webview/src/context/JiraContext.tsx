@@ -2,6 +2,7 @@ import React, { createContext, ReactNode } from "react";
 import { useImmerReducer } from "use-immer";
 import type { JiraStore, Clarification } from "../models/model";
 import * as jiraService from "../services/jiraService";
+import * as llmService from "../services/llmService";
 import { v4 as uuidv4 } from "uuid";
 import jiraReducer, { State, Action } from "./jiraReducer";
 
@@ -17,10 +18,12 @@ export const JiraContext = createContext<
 				author?: string;
 				modifiedFields?: Record<string, any>;
 			}) => Promise<any>;
+			deleteClarification: (question: string) => Promise<void>;
 			refineJira: (modifiedFields: Record<string, any>, author?: string) => Promise<any>;
 			updateField: (field: string, value: any) => Promise<void>;
 			reloadStore: () => Promise<void>;
 			restoreRefined: () => void;
+			identifyClarificationsNeeded: () => Promise<void>;
 	  }
 	| undefined
 >(undefined);
@@ -61,15 +64,7 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 		try {
 			// optimistic local update
 			const now = new Date().toISOString();
-			const id = uuidv4();
-			const clar: Clarification = {
-				id,
-				question: args.question,
-				response: args.response,
-				author: args.author,
-				createdAt: now,
-			};
-			dispatch({ type: "ADD_CLARIFICATION_LOCAL", clarification: clar });
+			dispatch({ type: "UPDATE_CLARIFICATION_LOCAL", question: args.question, response: args.response, author: args.author });
 
 			const persisted = await jiraService.saveClarification(currentKey, {
 				question: args.question,
@@ -129,9 +124,95 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 		dispatch({ type: "RESTORE_REFINED" });
 	}
 
+	async function deleteClarification(question: string) {
+		if (!currentKey) throw new Error("No current JIRA key set");
+		dispatch({ type: "SET_SAVING", saving: true });
+		try {
+			// optimistic local update
+			dispatch({ type: "DELETE_CLARIFICATION_LOCAL", question });
+
+			// Delete from storage
+			await jiraService.deleteClarification(currentKey, question);
+
+			// reload after persist to get canonical data
+			await reloadStore();
+			dispatch({ type: "SET_SAVING", saving: false });
+		} catch (err: any) {
+			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
+			dispatch({ type: "SET_SAVING", saving: false });
+			throw err;
+		}
+	}
+
+	async function identifyClarificationsNeeded() {
+		if (!currentKey || !state.store) throw new Error("No current JIRA key or store set");
+
+		dispatch({ type: "SET_SAVING", saving: true });
+		try {
+			// Get current story details
+			const store = state.store as JiraStore;
+			const summary = store.refined?.summary || store.original?.fields?.summary || "";
+			const description = store.refined?.description || store.original?.fields?.description || "";
+			const acceptanceCriteria = store.refined?.customfield_10601 || store.original?.fields?.customfield_10601 || [];
+
+			// Call LLM service to identify clarifications
+			const suggestions = await llmService.identifyClarificationsNeeded(
+				summary,
+				description,
+				Array.isArray(acceptanceCriteria) ? acceptanceCriteria : []
+			);
+
+			// Convert suggestions to clarifications and add them
+			const clarificationsToAdd = llmService.createClarificationsFromSuggestions(suggestions, "llm-service");
+
+			// Add each clarification to the store
+			for (const clarification of clarificationsToAdd) {
+				const now = new Date().toISOString();
+				const id = uuidv4();
+				const clarificationRecord: Clarification = {
+					id,
+					question: clarification.question,
+					response: clarification.response,
+					author: clarification.author,
+					createdAt: now,
+				};
+
+				// Optimistic local update
+				dispatch({ type: "ADD_CLARIFICATION_LOCAL", clarification: clarificationRecord });
+
+				// Persist to storage
+				await jiraService.saveClarification(currentKey, {
+					question: clarification.question,
+					response: clarification.response,
+					author: clarification.author,
+				});
+			}
+
+			// Reload store to get canonical data
+			await reloadStore();
+			dispatch({ type: "SET_SAVING", saving: false });
+		} catch (err: any) {
+			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
+			dispatch({ type: "SET_SAVING", saving: false });
+			throw err;
+		}
+	}
+
 	return (
 		<JiraContext.Provider
-			value={{ state, dispatch, currentKey, setCurrentKey, saveClarification, refineJira, updateField, reloadStore, restoreRefined }}
+			value={{
+				state,
+				dispatch,
+				currentKey,
+				setCurrentKey,
+				saveClarification,
+				deleteClarification,
+				refineJira,
+				updateField,
+				reloadStore,
+				restoreRefined,
+				identifyClarificationsNeeded,
+			}}
 		>
 			{children}
 		</JiraContext.Provider>

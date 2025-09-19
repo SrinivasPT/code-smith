@@ -30,10 +30,6 @@ export const jiraReducer = (draft: Draft<State>, action: Action) => {
 					: draft.store.original && draft.store.original.fields
 					? { ...draft.store.original.fields }
 					: {});
-			for (const k of Object.keys(action.clarification.modifiedFields || {})) {
-				// @ts-ignore
-				draft.store.refined[k] = action.clarification.modifiedFields[k];
-			}
 			return;
 		case "APPLY_REFINEMENT_LOCAL":
 			if (!draft.store) return;

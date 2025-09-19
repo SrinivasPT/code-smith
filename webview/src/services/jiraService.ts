@@ -230,7 +230,21 @@ export async function saveClarification(
 		author,
 		createdAt: now,
 	};
-	store.clarifications.push(clarification);
+
+	// Check if a clarification with the same question already exists
+	const existingIndex = store.clarifications.findIndex((c) => c.question === question);
+	if (existingIndex >= 0) {
+		// Update existing clarification
+		store.clarifications[existingIndex] = {
+			...store.clarifications[existingIndex],
+			response,
+			author,
+			createdAt: now, // Update timestamp
+		};
+	} else {
+		// Add new clarification
+		store.clarifications.push(clarification);
+	}
 
 	// history/meta
 	store.meta = store.meta || {};
@@ -241,11 +255,31 @@ export async function saveClarification(
 	store.history = store.history || [];
 	store.history.push({ version: nextVersion, timestamp: now, refined: { ...(store.refined || {}) } });
 
-	// keep compatibility: also write top-level fields for older codepaths
+	// keep compatibility: also write top-level fields for older code paths
 	store.fields = store.fields || store.refined;
 
 	writeStoreAtomic(store, key);
 	return clarification;
+}
+
+export async function deleteClarification(key: string, question: string) {
+	const store = await readStore(key);
+	store.clarifications = Array.isArray(store.clarifications) ? store.clarifications : [];
+	store.clarifications = store.clarifications.filter((c) => c.question !== question);
+
+	// history/meta
+	store.meta = store.meta || {};
+	const nextVersion = (store.meta.currentVersion || 0) + 1;
+	store.meta.currentVersion = nextVersion;
+	store.meta.lastModifiedBy = "local";
+	store.meta.lastModifiedAt = new Date().toISOString();
+	store.history = store.history || [];
+	store.history.push({ version: nextVersion, timestamp: new Date().toISOString(), refined: { ...(store.refined || {}) } });
+
+	// keep compatibility: also write top-level fields for older code paths
+	store.fields = store.fields || store.refined;
+
+	writeStoreAtomic(store, key);
 }
 
 export function refineJira(key: string, modifiedFields: Record<string, any>, author?: string) {

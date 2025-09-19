@@ -26,12 +26,12 @@ export default function RefinementPage() {
 			{/* Right Side: Clarifications + Chat */}
 			<div className="space-y-4">
 				<div className="card p-4">
-					<div className="flex justify-between items-center mb-4">
+					{/* <div className="flex justify-between items-center mb-4">
 						<h2 className="text-lg font-semibold flex items-center">Refinement Process</h2>
 						<div className="relative">
 							<ChatPopover />
 						</div>
-					</div>
+					</div> */}
 					<ClarificationsPanel />
 				</div>
 			</div>
