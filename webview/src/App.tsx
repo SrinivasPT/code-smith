@@ -1,37 +1,57 @@
 /// <reference types="react" />
 import React from "react";
 import RefinementPage from "./components/RefinementPage";
+import { JiraProvider, useJira } from "./context/JiraContext";
+import JiraFetch from "./components/JiraFetch";
 
 // TypeScript declaration for acquireVsCodeApi
 declare global {
 	interface Window {
 		acquireVsCodeApi: () => {
-			postMessage: (msg: any) => void;
+			// postMessage: (msg: any) => void;
 			// ...other VS Code API methods if needed
 		};
 	}
 }
 
 // Add this line to acquire the VS Code API
-const vscode = window.acquireVsCodeApi();
+// const vscode = window.acquireVsCodeApi();
 
 export default function App() {
+	return (
+		<JiraProvider>
+			<InnerApp />
+		</JiraProvider>
+	);
+}
+
+function InnerApp() {
+	const { restoreRefined } = useJira();
+
 	const handleClick = () => {
-		vscode.postMessage({ type: "refine" });
+		// vscode.postMessage({ type: "refine" });
 	};
 
 	return (
-			<div className="min-h-screen">
-				<div className="container mx-auto px-6 py-8">
+		<div className="min-h-screen">
+			<div className="container mx-auto px-6 py-8">
 				{/* Header Section */}
-						<div className="text-center mb-6 animate-fade-in">
-							<h1 className="text-4xl font-bold text-gray-900 mb-1">
-								🚀 CodeSmith
-							</h1>
-							<p className="text-muted text-sm max-w-2xl mx-auto">
-								Transform Jira stories into executable development plans with AI-powered refinement
-							</p>
+				<div className="mb-6 animate-fade-in">
+					<div className="flex items-center justify-between">
+						<h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-0">Code Smith</h1>
+						<div className="ml-6">
+							<JiraFetch />
 						</div>
+						<div className="flex items-center space-x-3">
+							<button onClick={restoreRefined} className="btn-primary text-sm">
+								Restore
+							</button>
+							<button className="btn-primary text-sm">Refine</button>
+							<button className="btn-primary text-sm">Plan</button>
+							<button className="btn-primary text-sm">Execute</button>
+						</div>
+					</div>
+				</div>
 
 				{/* Main Content */}
 				<div className="animate-slide-in">
@@ -39,14 +59,14 @@ export default function App() {
 				</div>
 
 				{/* Action Button */}
-						<div className="text-center mt-8">
-							<button
-								onClick={handleClick}
-								className="btn-accent text-sm px-6 py-2 transform hover:scale-102 transition-transform duration-150"
-							>
-								✨ Refine Jira Story
-							</button>
-						</div>
+				<div className="text-center mt-8">
+					<button
+						onClick={handleClick}
+						className="btn-accent text-sm px-6 py-2 transform hover:scale-102 transition-transform duration-150"
+					>
+						Refine Jira Story
+					</button>
+				</div>
 			</div>
 		</div>
 	);

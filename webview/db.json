@@ -1,0 +1,36 @@
+{
+	"jira": [
+		{
+			"id": "AAAA-123",
+			"key": "AAAA-123",
+			"fields": {
+				"summary": "Implement user authentication for the web platform, supporting both internal and external users. - AAAA-123",
+				"description": "Develop and integrate a robust user authentication module using OAuth2 standards.\n\nThe solution should support SSO, password reset, and multi-factor authentication.\n\nEnsure compliance with company security policies and GDPR requirements.\n\nCollaborate with the frontend and backend teams for seamless integration.",
+				"customfield_10601": "*Acceptance criteria:\n1. Users can register and log in using email and SSO.\n2. Passwords are hashed and stored securely using bcrypt.\n3. OAuth2 integration for Google and Microsoft logins.\n4. Multi-factor authentication is available for all users.\n5. Audit logs are generated for all authentication events.\n6. The solution passes security review and automated tests.",
+				"assignee": { "displayName": "Alice Johnson (alice.johnson@company.com)" },
+				"created": "2024-05-10T09:30:00.000+0000",
+				"updated": "2024-05-15T14:45:00.000+0000",
+				"status": { "name": "In Progress" },
+				"priority": { "name": "High" },
+				"components": [{ "name": "Backend" }, { "name": "Security" }],
+				"creator": { "displayName": "Bob Smith (bob.smith@company.com)" }
+			}
+		},
+		{
+			"id": "BBBB-123",
+			"key": "BBBB-123",
+			"fields": {
+				"summary": "Implement user authentication for the web platform, supporting both internal and external users. - BBBB-123",
+				"description": "Develop and integrate a robust user authentication module using OAuth2 standards.\n\nThe solution should support SSO, password reset, and multi-factor authentication.\n\nEnsure compliance with company security policies and GDPR requirements.\n\nCollaborate with the frontend and backend teams for seamless integration.",
+				"customfield_10601": "*Acceptance criteria:\n1. Users can register and log in using email and SSO.\n2. Passwords are hashed and stored securely using bcrypt.\n3. OAuth2 integration for Google and Microsoft logins.\n4. Multi-factor authentication is available for all users.\n5. Audit logs are generated for all authentication events.\n6. The solution passes security review and automated tests.",
+				"assignee": { "displayName": "Alice Johnson (alice.johnson@company.com)" },
+				"created": "2024-05-10T09:30:00.000+0000",
+				"updated": "2024-05-15T14:45:00.000+0000",
+				"status": { "name": "In Progress" },
+				"priority": { "name": "High" },
+				"components": [{ "name": "Backend" }, { "name": "Security" }],
+				"creator": { "displayName": "Bob Smith (bob.smith@company.com)" }
+			}
+		}
+	]
+}
