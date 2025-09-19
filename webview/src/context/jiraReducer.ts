@@ -1,6 +1,5 @@
 import { Draft } from "immer";
 import type { JiraStore, Clarification } from "../models/model";
-
 export type State = { store: JiraStore | null; saving?: boolean; error?: string | null };
 
 export type Action =
@@ -10,6 +9,7 @@ export type Action =
 	| { type: "DELETE_CLARIFICATION_LOCAL"; question: string }
 	| { type: "APPLY_REFINEMENT_LOCAL"; modifiedFields: Record<string, any>; author?: string }
 	| { type: "UPDATE_FIELD_LOCAL"; field: string; value: any }
+	| { type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL"; context: string }
 	| { type: "SET_SAVING"; saving: boolean }
 	| { type: "SET_ERROR"; error?: string | null }
 	| { type: "RESTORE_REFINED" };
@@ -94,6 +94,10 @@ export const jiraReducer = (draft: Draft<State>, action: Action) => {
 			if (draft.store.refined) {
 				draft.store.refined[action.field] = action.value;
 			}
+			return;
+		case "UPDATE_ADDITIONAL_CONTEXT_LOCAL":
+			if (!draft.store) return;
+			draft.store.additionalContext = action.context;
 			return;
 		case "RESTORE_REFINED":
 			if (!draft.store || !draft.store.original) return;

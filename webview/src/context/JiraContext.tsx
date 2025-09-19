@@ -21,6 +21,7 @@ export const JiraContext = createContext<
 			deleteClarification: (question: string) => Promise<void>;
 			refineJira: (modifiedFields: Record<string, any>, author?: string) => Promise<any>;
 			updateField: (field: string, value: any) => Promise<void>;
+			updateAdditionalContext: (context: string) => Promise<void>;
 			reloadStore: () => Promise<void>;
 			restoreRefined: () => void;
 			identifyClarificationsNeeded: () => Promise<void>;
@@ -104,6 +105,17 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 		dispatch({ type: "UPDATE_FIELD_LOCAL", field, value });
 		try {
 			await jiraService.refineJira(currentKey, { [field]: value }, "local");
+		} catch (err: any) {
+			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
+			throw err;
+		}
+	}
+
+	async function updateAdditionalContext(context: string) {
+		if (!currentKey) throw new Error("No current JIRA key set");
+		dispatch({ type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL", context });
+		try {
+			await jiraService.updateAdditionalContext(currentKey, context);
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
 			throw err;
@@ -209,6 +221,7 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 				deleteClarification,
 				refineJira,
 				updateField,
+				updateAdditionalContext,
 				reloadStore,
 				restoreRefined,
 				identifyClarificationsNeeded,

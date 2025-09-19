@@ -38,7 +38,7 @@ export default function ClarificationsPanel() {
 		<div className="space-y-3 compact">
 			{/* Header with Progress */}
 			<div className="flex items-center justify-between">
-				<h2 className="text-lg font-semibold flex items-center text-gray-900">❓ Clarifications</h2>
+				<h2 className="text-lg font-semibold flex items-center text-gray-900 uppercase">Clarifications</h2>
 				<div className="flex items-center space-x-2">
 					{clarifications.length === 0 && (
 						<button
@@ -110,24 +110,21 @@ export default function ClarificationsPanel() {
 				</div>
 			)}
 
-			{/* Summary */}
-			{answeredCount > 0 && (
-				<div className="mt-4 p-3 bg-white rounded-lg border" style={{ borderColor: "var(--border)" }}>
-					<h3 className="font-semibold text-gray-900 mb-2">📋 Summary</h3>
-					<ul className="space-y-1 text-sm text-gray-700">
-						{clarifications
-							.filter((c) => (c.answer || c.response || "").trim().length > 0)
-							.map((c, i) => (
-								<li key={i} className="flex items-start space-x-2">
-									<span className="text-[var(--accent)] mt-0.5">•</span>
-									<span>
-										<strong>{c.question}</strong>: {c.answer || c.response}
-									</span>
-								</li>
-							))}
-					</ul>
-				</div>
-			)}
+			{/* Additional Context */}
+			<div className="mt-4 p-3 bg-white rounded-lg border" style={{ borderColor: "var(--border)" }}>
+				<h3 className="font-semibold text-gray-900 mb-2">� Additional Context</h3>
+				<textarea
+					value={jiraCtx.state?.store?.additionalContext || ""}
+					onChange={(e) => {
+						jiraCtx
+							.updateAdditionalContext(e.target.value)
+							.catch((e) => console.error("Failed to update additional context", e));
+					}}
+					className="w-full p-2 border rounded text-sm text-gray-800"
+					placeholder="Add any additional context or notes here..."
+					rows={4}
+				/>
+			</div>
 		</div>
 	);
 }

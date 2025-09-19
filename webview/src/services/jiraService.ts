@@ -84,8 +84,6 @@ export async function readStore(key: string): Promise<JiraStore & JiraRaw> {
 					fields: jiraData.fields,
 					refined: { ...jiraData.fields }, // Copy API data to refined initially
 					clarifications: [],
-					meta: { currentVersion: 1, lastModifiedAt: new Date().toISOString() },
-					history: [],
 				};
 				writeStoreAtomic(store, key);
 			}
@@ -153,8 +151,6 @@ export async function fetchJiraFromApi(key: string): Promise<JiraRaw> {
 			fields: jiraData.fields,
 			refined: { ...jiraData.fields }, // Copy API data to refined initially
 			clarifications: [],
-			meta: { currentVersion: 1, lastModifiedAt: new Date().toISOString() },
-			history: [],
 		};
 		writeStoreAtomic(store, key);
 
@@ -246,15 +242,6 @@ export async function saveClarification(
 		store.clarifications.push(clarification);
 	}
 
-	// history/meta
-	store.meta = store.meta || {};
-	const nextVersion = (store.meta.currentVersion || 0) + 1;
-	store.meta.currentVersion = nextVersion;
-	store.meta.lastModifiedBy = author;
-	store.meta.lastModifiedAt = now;
-	store.history = store.history || [];
-	store.history.push({ version: nextVersion, timestamp: now, refined: { ...(store.refined || {}) } });
-
 	// keep compatibility: also write top-level fields for older code paths
 	store.fields = store.fields || store.refined;
 
@@ -267,14 +254,15 @@ export async function deleteClarification(key: string, question: string) {
 	store.clarifications = Array.isArray(store.clarifications) ? store.clarifications : [];
 	store.clarifications = store.clarifications.filter((c) => c.question !== question);
 
-	// history/meta
-	store.meta = store.meta || {};
-	const nextVersion = (store.meta.currentVersion || 0) + 1;
-	store.meta.currentVersion = nextVersion;
-	store.meta.lastModifiedBy = "local";
-	store.meta.lastModifiedAt = new Date().toISOString();
-	store.history = store.history || [];
-	store.history.push({ version: nextVersion, timestamp: new Date().toISOString(), refined: { ...(store.refined || {}) } });
+	// keep compatibility: also write top-level fields for older code paths
+	store.fields = store.fields || store.refined;
+
+	writeStoreAtomic(store, key);
+}
+
+export async function updateAdditionalContext(key: string, context: string) {
+	const store = await readStore(key);
+	store.additionalContext = context;
 
 	// keep compatibility: also write top-level fields for older code paths
 	store.fields = store.fields || store.refined;

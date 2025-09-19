@@ -1,6 +1,8 @@
 /// <reference types="react" />
-import React from "react";
+import React, { useState } from "react";
 import RefinementPage from "./components/RefinementPage";
+import PlanPanel from "./components/PlanPanel";
+import JiraDetails from "./components/JiraDetails";
 import { JiraProvider, useJira } from "./context/JiraContext";
 import JiraFetch from "./components/JiraFetch";
 
@@ -27,9 +29,23 @@ export default function App() {
 
 function InnerApp() {
 	const { restoreRefined } = useJira();
+	const [showPlanPanel, setShowPlanPanel] = useState(false);
 
-	const handleClick = () => {
+	const handleRefine = () => {
+		setShowPlanPanel(false);
 		// vscode.postMessage({ type: "refine" });
+	};
+
+	const handlePlan = () => {
+		setShowPlanPanel(true);
+	};
+
+	const handleExecute = () => {
+		// vscode.postMessage({ type: "execute" });
+	};
+
+	const handleClosePlanPanel = () => {
+		setShowPlanPanel(false);
 	};
 
 	return (
@@ -46,16 +62,41 @@ function InnerApp() {
 							<button onClick={restoreRefined} className="btn-primary text-sm w-24">
 								Restore
 							</button>
-							<button className="btn-primary text-sm w-24">Refine</button>
-							<button className="btn-primary text-sm w-24">Plan</button>
-							<button className="btn-primary text-sm w-24">Execute</button>
+							<button onClick={handleRefine} className="btn-primary text-sm w-24">
+								Refine
+							</button>
+							<button onClick={handlePlan} className="btn-primary text-sm w-24">
+								Plan
+							</button>
+							<button onClick={handleExecute} className="btn-primary text-sm w-24">
+								Execute
+							</button>
 						</div>
 					</div>
 				</div>
 
 				{/* Main Content */}
 				<div className="animate-slide-in">
-					<RefinementPage />
+					{showPlanPanel ? (
+						<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full compact">
+							{/* Left Side: Jira Details */}
+							<div className="space-y-4">
+								<div className="card p-4">
+									<h2 className="text-lg font-semibold mb-3 flex items-center uppercase">Jira Details</h2>
+									<JiraDetails />
+								</div>
+							</div>
+
+							{/* Right Side: Plan Panel */}
+							<div className="space-y-4">
+								<div className="card p-4">
+									<PlanPanel onClose={handleClosePlanPanel} />
+								</div>
+							</div>
+						</div>
+					) : (
+						<RefinementPage />
+					)}
 				</div>
 			</div>
 		</div>

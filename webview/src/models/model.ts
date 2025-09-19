@@ -15,8 +15,7 @@ export interface JiraStore {
 	original?: JiraRaw;
 	refined?: Record<string, any>; // mirrors original.fields shape
 	clarifications?: Clarification[];
-	history?: Array<{ version: number; timestamp: string; refined: Record<string, any> }>;
-	meta?: { currentVersion?: number; lastModifiedBy?: string; lastModifiedAt?: string };
+	additionalContext?: string;
 }
 
 export class JiraDetails {

@@ -98,10 +98,25 @@ export default function JiraDetails() {
 									const value = e.target.value;
 									updateDescription(value);
 								}}
-								rows={10}
+								rows={6}
 								className="w-full border p-2 rounded"
 							/>
 							{!getDescription() && <div className="text-gray-400 mt-2">No description provided.</div>}
+						</div>
+						{/* Additional Context */}
+						<div className="mt-4">
+							<h3 className="font-semibold text-red-900 mb-2">Additional Context</h3>
+							<textarea
+								value={jiraCtx.state?.store?.additionalContext || ""}
+								onChange={(e) => {
+									jiraCtx
+										.updateAdditionalContext(e.target.value)
+										.catch((e) => console.error("Failed to update additional context", e));
+								}}
+								className="w-full p-2 border rounded text-sm text-gray-800"
+								placeholder="Add any additional context or notes here..."
+								rows={5}
+							/>
 						</div>
 					</div>
 				)}
