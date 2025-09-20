@@ -2,10 +2,43 @@
 
 import { Clarification } from "../models/model";
 
+// Note: VS Code API is already acquired in App.tsx, so we'll access it via a different method
+
 export interface ClarificationSuggestion {
 	question: string;
 	context?: string;
 	priority?: "high" | "medium" | "low";
+}
+
+export interface PlanStep {
+	id: string;
+	title: string;
+	description: string;
+	fileChanges: string[];
+	codeDetails: string;
+	estimatedComplexity: "low" | "medium" | "high";
+	dependencies?: string[];
+	priority: "high" | "medium" | "low";
+	status: "not-started" | "in-progress" | "completed";
+}
+
+export interface ExecutionPlan {
+	id: string;
+	title: string;
+	description: string;
+	steps: PlanStep[];
+	overallApproach: string;
+	technicalConsiderations: string[];
+	testingStrategy: string;
+	createdAt: string;
+	updatedAt: string;
+	version: number;
+}
+
+export interface PlanGenerationResponse {
+	plan: ExecutionPlan;
+	reasoning: string;
+	implementationNotes: string[];
 }
 
 /**
@@ -134,3 +167,75 @@ export default {
 	createClarificationsFromSuggestions,
 	suggestStoryRefinements,
 };
+
+/**
+ * Generates an execution plan based on Jira story data
+ * This communicates with the VS Code extension's LLM service
+ */
+export async function generateExecutionPlan(
+	jiraStoryData: {
+		summary: string;
+		description: string;
+		acceptanceCriteria: string[];
+		clarifications: any[];
+		additionalContext: string;
+	},
+	previousPlan?: ExecutionPlan,
+	userFeedback?: string
+): Promise<PlanGenerationResponse> {
+	console.log("Starting plan generation...");
+
+	// Access the VS Code API from the global window object (stored by App.tsx)
+	const vscode = (window as any).__vscode || (globalThis as any).__vscode;
+
+	if (!vscode) {
+		console.error("VS Code API not available - it should be set by App.tsx");
+		throw new Error("VS Code API not available");
+	}
+
+	console.log("VS Code API available, sending message");
+
+	// Send message to the extension to generate the plan
+	return new Promise((resolve, reject) => {
+		const messageId = `plan-${Date.now()}`;
+		console.log("Generated message ID:", messageId);
+
+		// Listen for the response
+		const messageHandler = (event: MessageEvent) => {
+			console.log("Received message:", event.data);
+			const message = event.data;
+			if (message.type === "planGenerated" && message.id === messageId) {
+				console.log("Got matching plan response");
+				window.removeEventListener("message", messageHandler);
+				if (message.error) {
+					console.error("Plan generation error:", message.error);
+					reject(new Error(message.error));
+				} else {
+					console.log("Plan generation successful");
+					resolve(message.data);
+				}
+			}
+		};
+
+		window.addEventListener("message", messageHandler);
+
+		// Send the request to the extension
+		console.log("Sending plan generation request");
+		vscode.postMessage({
+			type: "generatePlan",
+			id: messageId,
+			data: {
+				jiraStoryData,
+				previousPlan,
+				userFeedback,
+			},
+		});
+
+		// Timeout after 30 seconds
+		setTimeout(() => {
+			console.log("Plan generation timed out");
+			window.removeEventListener("message", messageHandler);
+			reject(new Error("Plan generation timed out"));
+		}, 30000);
+	});
+}

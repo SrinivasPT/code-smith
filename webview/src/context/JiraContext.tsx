@@ -1,8 +1,9 @@
 import React, { createContext, ReactNode } from "react";
 import { useImmerReducer } from "use-immer";
-import type { JiraStore, Clarification } from "../models/model";
+import type { JiraStore, Clarification, ExecutionPlan } from "../models/model";
 import * as jiraService from "../services/jiraService";
 import * as llmService from "../services/llmService";
+import { generateExecutionPlan } from "../services/llmService";
 import { v4 as uuidv4 } from "uuid";
 import jiraReducer, { State, Action } from "./jiraReducer";
 
@@ -27,6 +28,8 @@ export const JiraContext = createContext<
 			restoreRefined: () => void;
 			identifyClarificationsNeeded: () => Promise<void>;
 			addClarificationsFromLLM: (clarifications: { question: string; context?: string }[]) => Promise<void>;
+			generatePlan: (userFeedback?: string) => Promise<void>;
+			updatePlanStep: (stepId: string, updates: Partial<ExecutionPlan["steps"][0]>) => void;
 	  }
 	| undefined
 >(undefined);
@@ -263,6 +266,74 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 		}
 	}
 
+	async function generatePlan(userFeedback?: string) {
+		if (!currentKey || !state.store) throw new Error("No current JIRA key or store set");
+
+		dispatch({ type: "SET_LOADING", loading: true });
+		try {
+			// Get current story details
+			const store = state.store as JiraStore;
+			const summary = store.refined?.summary || store.original?.fields?.summary || "";
+			const description = store.refined?.description || store.original?.fields?.description || "";
+			const acceptanceCriteria = store.refined?.customfield_10601 || store.original?.fields?.customfield_10601 || [];
+
+			// Prepare clarifications data
+			const clarifications = (store.clarifications || []).map((c) => ({
+				question: c.question,
+				response: c.response,
+				author: c.author,
+			}));
+
+			const jiraStoryData = {
+				summary,
+				description,
+				acceptanceCriteria: Array.isArray(acceptanceCriteria)
+					? acceptanceCriteria
+					: typeof acceptanceCriteria === "string"
+					? acceptanceCriteria.split("\n").filter(Boolean)
+					: [],
+				clarifications,
+				additionalContext: store.additionalContext || "",
+			};
+
+			// Generate the plan using the LLM service
+			const response = await generateExecutionPlan(jiraStoryData, store.currentPlan, userFeedback);
+
+			// Update the store with the new plan
+			dispatch({ type: "SET_CURRENT_PLAN", plan: response.plan });
+
+			// Persist the plan to storage
+			await jiraService.savePlan(currentKey, response.plan);
+
+			dispatch({ type: "SET_LOADING", loading: false });
+		} catch (err: any) {
+			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
+			dispatch({ type: "SET_LOADING", loading: false });
+			throw err;
+		}
+	}
+
+	function updatePlanStep(stepId: string, updates: Partial<ExecutionPlan["steps"][0]>) {
+		if (!state.store) return;
+		const store = state.store as unknown as JiraStore;
+		if (!store.currentPlan) return;
+
+		dispatch({
+			type: "UPDATE_PLAN_STEP",
+			planId: store.currentPlan.id,
+			stepId,
+			updates,
+		});
+
+		// Persist the changes if we have a current key
+		if (currentKey && store.currentPlan) {
+			jiraService.savePlan(currentKey, store.currentPlan).catch((err: any) => {
+				console.error("Failed to persist plan step update:", err);
+				dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
+			});
+		}
+	}
+
 	return (
 		<JiraContext.Provider
 			value={{
@@ -280,6 +351,8 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 				restoreRefined,
 				identifyClarificationsNeeded,
 				addClarificationsFromLLM,
+				generatePlan,
+				updatePlanStep,
 			}}
 		>
 			{children}

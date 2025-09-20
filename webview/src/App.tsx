@@ -19,6 +19,10 @@ declare global {
 // Acquire VS Code API once at module level
 const vscode = window.acquireVsCodeApi();
 
+// Store it globally so other modules can access it
+(window as any).__vscode = vscode;
+(globalThis as any).__vscode = vscode;
+
 export default function App() {
 	return (
 		<JiraProvider>

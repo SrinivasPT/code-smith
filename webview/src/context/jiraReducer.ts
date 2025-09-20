@@ -1,5 +1,5 @@
 import { Draft } from "immer";
-import type { JiraStore, Clarification } from "../models/model";
+import type { JiraStore, Clarification, ExecutionPlan } from "../models/model";
 export type State = { store: JiraStore | null; loading?: boolean; error?: string | null };
 
 export type Action =
@@ -12,7 +12,10 @@ export type Action =
 	| { type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL"; context: string }
 	| { type: "SET_LOADING"; loading: boolean }
 	| { type: "SET_ERROR"; error?: string | null }
-	| { type: "RESTORE_REFINED" };
+	| { type: "RESTORE_REFINED" }
+	| { type: "ADD_EXECUTION_PLAN"; plan: ExecutionPlan }
+	| { type: "SET_CURRENT_PLAN"; plan: ExecutionPlan }
+	| { type: "UPDATE_PLAN_STEP"; planId: string; stepId: string; updates: Partial<ExecutionPlan["steps"][0]> };
 
 export const jiraReducer = (draft: Draft<State>, action: Action) => {
 	switch (action.type) {
@@ -102,6 +105,31 @@ export const jiraReducer = (draft: Draft<State>, action: Action) => {
 		case "RESTORE_REFINED":
 			if (!draft.store || !draft.store.original) return;
 			draft.store.refined = { ...draft.store.original.fields };
+			return;
+		case "ADD_EXECUTION_PLAN":
+			if (!draft.store) return;
+			draft.store.executionPlans = draft.store.executionPlans || [];
+			draft.store.executionPlans.push(action.plan);
+			return;
+		case "SET_CURRENT_PLAN":
+			if (!draft.store) return;
+			draft.store.currentPlan = action.plan;
+			// Also add to plans history if not already there
+			draft.store.executionPlans = draft.store.executionPlans || [];
+			const existingPlanIndex = draft.store.executionPlans.findIndex((p) => p.id === action.plan.id);
+			if (existingPlanIndex >= 0) {
+				draft.store.executionPlans[existingPlanIndex] = action.plan;
+			} else {
+				draft.store.executionPlans.push(action.plan);
+			}
+			return;
+		case "UPDATE_PLAN_STEP":
+			if (!draft.store || !draft.store.currentPlan) return;
+			const stepIndex = draft.store.currentPlan.steps.findIndex((step) => step.id === action.stepId);
+			if (stepIndex >= 0) {
+				Object.assign(draft.store.currentPlan.steps[stepIndex], action.updates);
+				draft.store.currentPlan.updatedAt = new Date().toISOString();
+			}
 			return;
 	}
 };

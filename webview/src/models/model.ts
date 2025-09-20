@@ -11,11 +11,40 @@ export interface Clarification {
 	createdAt: string;
 }
 
+export interface PlanStep {
+	id: string;
+	title: string;
+	description: string;
+	fileChanges: string[];
+	codeDetails: string;
+	estimatedComplexity: "low" | "medium" | "high";
+	dependencies?: string[];
+	priority: "high" | "medium" | "low";
+	status: "not-started" | "in-progress" | "completed";
+}
+
+export interface ExecutionPlan {
+	id: string;
+	title: string;
+	description: string;
+	steps: PlanStep[];
+	overallApproach: string;
+	technicalConsiderations: string[];
+	testingStrategy: string;
+	createdAt: string;
+	updatedAt: string;
+	version: number;
+	reasoning?: string;
+	implementationNotes?: string[];
+}
+
 export interface JiraStore {
 	original?: JiraRaw;
 	refined?: Record<string, any>; // mirrors original.fields shape
 	clarifications?: Clarification[];
 	additionalContext?: string;
+	executionPlans?: ExecutionPlan[];
+	currentPlan?: ExecutionPlan;
 }
 
 export class JiraDetails {

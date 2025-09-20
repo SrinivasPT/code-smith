@@ -2,7 +2,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 
-import { JiraDetails, JiraRaw, JiraStore, Clarification } from "../models/model";
+import { JiraDetails, JiraRaw, JiraStore, Clarification, ExecutionPlan } from "../models/model";
 
 // Detect runtime. In browser we provide a localStorage-based fallback. In Node (or Electron) we use fs/path.
 const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
@@ -268,6 +268,30 @@ export async function updateAdditionalContext(key: string, context: string) {
 	store.fields = store.fields || store.refined;
 
 	writeStoreAtomic(store, key);
+}
+
+export async function savePlan(key: string, plan: ExecutionPlan) {
+	const store = await readStore(key);
+
+	// Initialize plans array if it doesn't exist
+	store.executionPlans = store.executionPlans || [];
+
+	// Check if plan already exists and update it, otherwise add new
+	const existingIndex = store.executionPlans.findIndex((p) => p.id === plan.id);
+	if (existingIndex >= 0) {
+		store.executionPlans[existingIndex] = plan;
+	} else {
+		store.executionPlans.push(plan);
+	}
+
+	// Set as current plan
+	store.currentPlan = plan;
+
+	// keep compatibility: also write top-level fields for older code paths
+	store.fields = store.fields || store.refined;
+
+	writeStoreAtomic(store, key);
+	return plan;
 }
 
 export function refineJira(key: string, modifiedFields: Record<string, any>, author?: string) {
