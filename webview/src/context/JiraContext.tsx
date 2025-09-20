@@ -25,6 +25,7 @@ export const JiraContext = createContext<
 			reloadStore: () => Promise<void>;
 			restoreRefined: () => void;
 			identifyClarificationsNeeded: () => Promise<void>;
+			addClarificationsFromLLM: (clarifications: { question: string; context?: string }[]) => Promise<void>;
 	  }
 	| undefined
 >(undefined);
@@ -210,6 +211,51 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 		}
 	}
 
+	async function addClarificationsFromLLM(clarifications: { question: string; context?: string }[]) {
+		if (!currentKey) throw new Error("No current JIRA key set");
+
+		dispatch({ type: "SET_SAVING", saving: true });
+		try {
+			// Convert to clarifications
+			const clarificationsToAdd = clarifications.map((c) => ({
+				question: c.question,
+				response: "",
+				author: "llm-service",
+			}));
+
+			// Add each clarification to the store
+			for (const clarification of clarificationsToAdd) {
+				const now = new Date().toISOString();
+				const id = uuidv4();
+				const clarificationRecord: Clarification = {
+					id,
+					question: clarification.question,
+					response: clarification.response,
+					author: clarification.author,
+					createdAt: now,
+				};
+
+				// Optimistic local update
+				dispatch({ type: "ADD_CLARIFICATION_LOCAL", clarification: clarificationRecord });
+
+				// Persist to storage
+				await jiraService.saveClarification(currentKey, {
+					question: clarification.question,
+					response: clarification.response,
+					author: clarification.author,
+				});
+			}
+
+			// Reload store to get canonical data
+			await reloadStore();
+			dispatch({ type: "SET_SAVING", saving: false });
+		} catch (err: any) {
+			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
+			dispatch({ type: "SET_SAVING", saving: false });
+			throw err;
+		}
+	}
+
 	return (
 		<JiraContext.Provider
 			value={{
@@ -225,6 +271,7 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 				reloadStore,
 				restoreRefined,
 				identifyClarificationsNeeded,
+				addClarificationsFromLLM,
 			}}
 		>
 			{children}

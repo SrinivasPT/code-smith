@@ -31,11 +31,7 @@ export default function ChatPopover() {
 
 	return (
 		<div className="relative">
-			<button
-				className="p-2 bg-white border rounded-full text-gray-800 shadow-sm hover:shadow-md transition-all duration-150"
-				onClick={() => setOpen(!open)}
-				title="Open AI Assistant"
-			>
+			<button className="btn-secondary p-2 rounded-full" onClick={() => setOpen(!open)} title="Open AI Assistant">
 				💬
 			</button>
 
@@ -51,7 +47,7 @@ export default function ChatPopover() {
 									<p className="text-xs opacity-90">Online</p>
 								</div>
 							</div>
-							<button onClick={() => setOpen(false)} className="text-muted hover:text-gray-600 transition-colors">
+							<button onClick={() => setOpen(false)} className="btn-secondary p-1 text-sm">
 								✕
 							</button>
 						</div>

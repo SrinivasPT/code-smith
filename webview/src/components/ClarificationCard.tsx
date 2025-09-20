@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Icon from "./Icon";
 
 export default function ClarificationCard({
 	question,
@@ -26,7 +27,7 @@ export default function ClarificationCard({
 								hasAnswer ? "bg-[var(--muted)] text-white" : "bg-secondary-600 text-secondary-300"
 							}`}
 						>
-							{hasAnswer ? "✓" : "?"}
+							{hasAnswer ? <Icon name="check" size={14} /> : <Icon name="question" size={14} />}
 						</div>
 						<span className="font-medium text-secondary-100">{question}</span>
 					</div>
@@ -38,13 +39,17 @@ export default function ClarificationCard({
 									e.stopPropagation();
 									onDelete();
 								}}
-								className="text-red-500 hover:text-red-700 p-1 rounded"
+								className="text-red-500 hover:text-red-700 cursor-pointer p-1 bg-transparent border-none"
 								title="Delete clarification"
 							>
-								🗑️
+								<Icon name="trash" size={16} />
 							</button>
 						)}
-						<span className={`transform transition-transform duration-200 ${open ? "rotate-180" : ""}`}>▼</span>
+						<Icon
+							name="chevron-down"
+							size={12}
+							className={`transform transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+						/>
 					</div>
 				</div>
 			</div>

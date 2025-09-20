@@ -26,29 +26,11 @@ export default function ClarificationsPanel() {
 	const answeredCount = clarifications.filter((c) => (c.answer || c.response || "").trim().length > 0).length;
 	const progressPercentage = (answeredCount / Math.max(1, clarifications.length)) * 100;
 
-	const handleGenerateClarifications = async () => {
-		try {
-			await jiraCtx.identifyClarificationsNeeded();
-		} catch (error) {
-			console.error("Failed to generate clarifications:", error);
-		}
-	};
-
 	return (
 		<div className="space-y-3 compact">
-			{/* Header with Progress */}
 			<div className="flex items-center justify-between">
 				<h2 className="text-lg font-semibold flex items-center text-gray-900 uppercase">Clarifications</h2>
 				<div className="flex items-center space-x-2">
-					{clarifications.length === 0 && (
-						<button
-							onClick={handleGenerateClarifications}
-							disabled={jiraCtx.state?.saving}
-							className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-						>
-							{jiraCtx.state?.saving ? "Generating..." : "Generate"}
-						</button>
-					)}
 					<span className="text-sm text-muted">
 						{answeredCount}/{clarifications.length}
 					</span>
@@ -66,7 +48,7 @@ export default function ClarificationsPanel() {
 				{clarifications.length === 0 ? (
 					<div className="text-center py-4">
 						<p className="mb-2">No clarifications identified yet.</p>
-						<p>Click "Generate" to analyze the story and create relevant clarification questions.</p>
+						<p>Use the "Refine" button to analyze the story and create relevant clarification questions.</p>
 					</div>
 				) : progressPercentage === 100 ? (
 					"🎉 All clarifications completed!"
@@ -111,8 +93,8 @@ export default function ClarificationsPanel() {
 			)}
 
 			{/* Additional Context */}
-			<div className="mt-4 p-3 bg-white rounded-lg border" style={{ borderColor: "var(--border)" }}>
-				<h3 className="font-semibold text-gray-900 mb-2">� Additional Context</h3>
+			<div className="mt-4 p-3 bg-white rounded-sm border" style={{ borderColor: "var(--border)" }}>
+				<h3 className="font-semibold text-gray-900 mb-2 uppercase">Additional Context</h3>
 				<textarea
 					value={jiraCtx.state?.store?.additionalContext || ""}
 					onChange={(e) => {

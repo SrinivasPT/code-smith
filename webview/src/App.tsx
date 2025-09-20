@@ -1,5 +1,5 @@
 /// <reference types="react" />
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import RefinementPage from "./components/RefinementPage";
 import PlanPanel from "./components/PlanPanel";
 import JiraDetails from "./components/JiraDetails";
@@ -10,14 +10,14 @@ import JiraFetch from "./components/JiraFetch";
 declare global {
 	interface Window {
 		acquireVsCodeApi: () => {
-			// postMessage: (msg: any) => void;
+			postMessage: (msg: any) => void;
 			// ...other VS Code API methods if needed
 		};
 	}
 }
 
 // Add this line to acquire the VS Code API
-// const vscode = window.acquireVsCodeApi();
+const vscode = window.acquireVsCodeApi();
 
 export default function App() {
 	return (
@@ -28,12 +28,51 @@ export default function App() {
 }
 
 function InnerApp() {
-	const { restoreRefined } = useJira();
+	const jiraCtx = useJira();
 	const [showPlanPanel, setShowPlanPanel] = useState(false);
 
-	const handleRefine = () => {
+	const { restoreRefined, addClarificationsFromLLM } = jiraCtx;
+
+	useEffect(() => {
+		const messageHandler = (event: MessageEvent) => {
+			const message = event.data;
+			switch (message.type) {
+				case "clarifications":
+					addClarificationsFromLLM(message.data).catch((error) => {
+						console.error("Failed to add clarifications:", error);
+					});
+					break;
+				case "error":
+					console.error("Extension error:", message.message);
+					// You could show a toast or alert here
+					alert(`Error: ${message.message}`);
+					break;
+			}
+		};
+
+		window.addEventListener("message", messageHandler);
+		return () => window.removeEventListener("message", messageHandler);
+	}, [addClarificationsFromLLM]);
+
+	const handleRefine = async () => {
 		setShowPlanPanel(false);
-		// vscode.postMessage({ type: "refine" });
+		if (!jiraCtx.state.store) {
+			console.error("No Jira store available");
+			return;
+		}
+		const store = jiraCtx.state.store;
+		const summary = store.refined?.summary || store.original?.fields?.summary || "";
+		const description = store.refined?.description || store.original?.fields?.description || "";
+		const acceptanceCriteria = store.refined?.customfield_10601 || store.original?.fields?.customfield_10601 || [];
+		
+		vscode.postMessage({
+			type: "refine",
+			data: {
+				summary,
+				description,
+				acceptanceCriteria: Array.isArray(acceptanceCriteria) ? acceptanceCriteria : [],
+			},
+		});
 	};
 
 	const handlePlan = () => {
@@ -58,7 +97,7 @@ function InnerApp() {
 						<div className="ml-6">
 							<JiraFetch />
 						</div>
-						<div className="flex items-center space-x-3">
+						<div className="flex items-center space-x-2">
 							<button onClick={restoreRefined} className="btn-primary text-sm w-24">
 								Restore
 							</button>

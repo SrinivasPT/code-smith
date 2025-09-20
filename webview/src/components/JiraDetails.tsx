@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useJira } from "../context/JiraContext";
+import Icon from "./Icon";
 
 function formatDate(dateStr: string) {
 	return dateStr ? dateStr.split("T")[0] : "";
@@ -20,14 +21,7 @@ export default function JiraDetails() {
 	const getDescription = () => fields.description || "";
 	const getAcList = () => {
 		const acField = fields.customfield_10601;
-		return Array.isArray(acField)
-			? acField
-			: typeof acField === "string"
-			? acField
-					.split(/\r?\n/)
-					.map((s: string) => s.trim())
-					.filter(Boolean)
-			: [];
+		return Array.isArray(acField) ? acField : typeof acField === "string" ? acField.split(/\r?\n/) : [];
 	};
 
 	// Helper functions to update refined fields
@@ -78,11 +72,7 @@ export default function JiraDetails() {
 
 			{/* Card: Description (collapsible) */}
 			<div>
-				<button
-					aria-expanded={descOpen}
-					onClick={() => setDescOpen((d) => !d)}
-					className="w-full p-3 bg-gray-100 text-gray-800 rounded-lg border border-gray-200 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
-				>
+				<button aria-expanded={descOpen} onClick={() => setDescOpen((d) => !d)} className="btn-secondary w-full p-3 text-left">
 					<div className="flex items-center justify-between">
 						<div className="text-sm font-semibold uppercase">Description</div>
 						<div className="text-sm">{descOpen ? "Hide" : "Show"}</div>
@@ -90,7 +80,7 @@ export default function JiraDetails() {
 				</button>
 
 				{descOpen && (
-					<div className="mt-2 p-3 bg-white rounded-b-lg border-t-0 border" style={{ borderColor: "var(--border)" }}>
+					<div className="mt-2 p-3 bg-white rounded-b-sm border-t-0 border" style={{ borderColor: "var(--border)" }}>
 						<div className="text-sm text-gray-800 leading-relaxed">
 							<textarea
 								value={getDescription()}
@@ -124,11 +114,7 @@ export default function JiraDetails() {
 
 			{/* Acceptance Criteria (collapsible) */}
 			<div className="p-0">
-				<button
-					aria-expanded={acOpen}
-					onClick={() => setAcOpen((v) => !v)}
-					className="w-full p-3 bg-gray-100 text-gray-800 rounded-lg border border-gray-200 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
-				>
+				<button aria-expanded={acOpen} onClick={() => setAcOpen((v) => !v)} className="btn-secondary w-full p-3 text-left">
 					<div className="flex items-center justify-between">
 						<div className="text-sm font-semibold uppercase">Acceptance Criteria</div>
 						<div className="text-sm">{acOpen ? "Hide" : "Show"}</div>
@@ -146,9 +132,13 @@ export default function JiraDetails() {
 												value={ac}
 												onChange={(e) => updateAcAt(i, e.target.value)}
 												className="flex-1 border p-1 rounded"
+												placeholder="Enter acceptance criteria"
 											/>
-											<button onClick={() => removeAc(i)} className="ml-2 text-sm text-red-500">
-												Remove
+											<button
+												onClick={() => removeAc(i)}
+												className="text-red-500 hover:text-red-700 cursor-pointer p-1 bg-transparent border-none"
+											>
+												<Icon name="trash" size={16} />
 											</button>
 										</li>
 									))}
@@ -171,7 +161,7 @@ export default function JiraDetails() {
 				<button
 					aria-expanded={detailsOpen}
 					onClick={() => setDetailsOpen((d) => !d)}
-					className="w-full p-3 bg-gray-100 text-gray-800 rounded-lg border border-gray-200 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+					className="btn-secondary w-full p-3 text-left"
 				>
 					<div className="flex items-center justify-between">
 						<div className="text-sm font-semibold uppercase">Details</div>
