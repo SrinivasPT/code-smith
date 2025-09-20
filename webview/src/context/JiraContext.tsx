@@ -12,7 +12,7 @@ export const JiraContext = createContext<
 			dispatch: React.Dispatch<Action>;
 			currentKey: string | null;
 			setCurrentKey: (key: string) => Promise<void>;
-			setExternalLoading: (loading: boolean) => void;
+			setLoading: (loading: boolean) => void;
 			saveClarification: (args: {
 				question: string;
 				response: string;
@@ -32,7 +32,7 @@ export const JiraContext = createContext<
 >(undefined);
 
 export function JiraProvider({ children }: { children: ReactNode }) {
-	const [state, dispatch] = useImmerReducer(jiraReducer, { store: null, saving: false, error: null });
+	const [state, dispatch] = useImmerReducer(jiraReducer, { store: null, loading: false, error: null });
 	const [currentKey, setCurrentKeyState] = React.useState<string | null>(null);
 
 	// bootstrap: load current store if there's a current key
@@ -63,7 +63,7 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 	async function saveClarification(args: { question: string; response: string; author?: string; modifiedFields?: Record<string, any> }) {
 		if (!currentKey) throw new Error("No current JIRA key set");
-		dispatch({ type: "SET_SAVING", saving: true });
+		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			// optimistic local update
 			const now = new Date().toISOString();
@@ -77,27 +77,27 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 			});
 			// reload after persist to get canonical IDs/timestamps
 			await reloadStore();
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			return persisted;
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			throw err;
 		}
 	}
 
 	async function refineJira(modifiedFields: Record<string, any>, author?: string) {
 		if (!currentKey) throw new Error("No current JIRA key set");
-		dispatch({ type: "SET_SAVING", saving: true });
+		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			dispatch({ type: "APPLY_REFINEMENT_LOCAL", modifiedFields, author });
 			const persisted = await jiraService.refineJira(currentKey, modifiedFields, author);
 			await reloadStore();
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			return persisted;
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			throw err;
 		}
 	}
@@ -115,14 +115,14 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 	async function updateAdditionalContext(context: string) {
 		if (!currentKey) throw new Error("No current JIRA key set");
-		dispatch({ type: "SET_SAVING", saving: true });
+		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			dispatch({ type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL", context });
 			await jiraService.updateAdditionalContext(currentKey, context);
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			throw err;
 		}
 	}
@@ -141,13 +141,13 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 		dispatch({ type: "RESTORE_REFINED" });
 	}
 
-	function setExternalLoading(loading: boolean) {
-		dispatch({ type: "SET_EXTERNAL_LOADING", loading });
+	function setLoading(loading: boolean) {
+		dispatch({ type: "SET_LOADING", loading });
 	}
 
 	async function deleteClarification(question: string) {
 		if (!currentKey) throw new Error("No current JIRA key set");
-		dispatch({ type: "SET_SAVING", saving: true });
+		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			// optimistic local update
 			dispatch({ type: "DELETE_CLARIFICATION_LOCAL", question });
@@ -157,10 +157,10 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 			// reload after persist to get canonical data
 			await reloadStore();
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			throw err;
 		}
 	}
@@ -168,7 +168,7 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 	async function identifyClarificationsNeeded() {
 		if (!currentKey || !state.store) throw new Error("No current JIRA key or store set");
 
-		dispatch({ type: "SET_SAVING", saving: true });
+		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			// Get current story details
 			const store = state.store as JiraStore;
@@ -211,17 +211,17 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 			// Reload store to get canonical data
 			await reloadStore();
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			throw err;
 		}
 	}
 
 	async function addClarificationsFromLLM(clarifications: { question: string; context?: string }[]) {
 		if (!currentKey) throw new Error("No current JIRA key set");
-		dispatch({ type: "SET_SAVING", saving: true });
+		dispatch({ type: "SET_LOADING", loading: true });
 		try {
 			// Convert to clarifications
 			const clarificationsToAdd = clarifications.map((c) => ({
@@ -255,10 +255,10 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 			// Reload store to get canonical data
 			await reloadStore();
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
-			dispatch({ type: "SET_SAVING", saving: false });
+			dispatch({ type: "SET_LOADING", loading: false });
 			throw err;
 		}
 	}
@@ -270,7 +270,7 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 				dispatch,
 				currentKey,
 				setCurrentKey,
-				setExternalLoading,
+				setLoading,
 				saveClarification,
 				deleteClarification,
 				refineJira,

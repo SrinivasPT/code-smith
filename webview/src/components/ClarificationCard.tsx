@@ -14,7 +14,7 @@ export default function ClarificationCard({
 	onDelete?: () => void;
 }) {
 	const jiraCtx = useJira();
-	const isLoading = jiraCtx.state?.saving || jiraCtx.state?.externalLoading || false;
+	const isLoading = jiraCtx.state?.loading || false;
 	const [open, setOpen] = useState(true);
 	const [isFocused, setIsFocused] = useState(false);
 

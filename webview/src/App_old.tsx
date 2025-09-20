@@ -31,9 +31,12 @@ function InnerApp() {
 	const jiraCtx = useJira();
 	const [showPlanPanel, setShowPlanPanel] = useState(false);
 	const [activeButton, setActiveButton] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const { restoreRefined, addClarificationsFromLLM, updateAdditionalContext, setLoading } = jiraCtx;
-	const isLoading = jiraCtx.state?.loading || false;
+	const [isHandlingRefineResponse, setIsHandlingRefineResponse] = useState(false);
+
+	const { restoreRefined, addClarificationsFromLLM, updateAdditionalContext } = jiraCtx;
+	const isAnyLoading = isLoading || jiraCtx.state?.saving || jiraCtx.state?.externalLoading || false;
 
 	useEffect(() => {
 		const messageHandler = (event: MessageEvent) => {
@@ -42,7 +45,7 @@ function InnerApp() {
 				case "clarifications":
 					addClarificationsFromLLM(message.data).catch((error) => {
 						console.error("Failed to add clarifications:", error);
-						setLoading(false); // Clear loading on error
+						setIsLoading(false); // Clear loading on error
 					});
 					break;
 				case "refine-response":
@@ -52,7 +55,7 @@ function InnerApp() {
 					break;
 				case "error":
 					console.error("Extension error:", message.message);
-					setLoading(false); // Clear loading on error
+					setIsLoading(false); // Clear loading on error
 					// You could show a toast or alert here
 					alert(`Error: ${message.message}`);
 					break;
@@ -61,15 +64,25 @@ function InnerApp() {
 
 		window.addEventListener("message", messageHandler);
 		return () => window.removeEventListener("message", messageHandler);
-	}, [addClarificationsFromLLM, updateAdditionalContext, setLoading]);
+	}, [addClarificationsFromLLM, updateAdditionalContext]);
+
+	// Watch for JiraContext saving and external loading states
+	useEffect(() => {
+		if (jiraCtx.state.saving || jiraCtx.state.externalLoading) {
+			setIsLoading(true);
+		} else if (!isHandlingRefineResponse) {
+			// Only clear loading when JiraContext operations complete AND we're not handling a refine response
+			setIsLoading(false);
+		}
+	}, [jiraCtx.state.saving, jiraCtx.state.externalLoading, isHandlingRefineResponse]);
 
 	const handleRefine = async () => {
 		setActiveButton("refine");
-		setLoading(true);
+		setIsLoading(true);
 		setShowPlanPanel(false);
 		if (!jiraCtx.state.store) {
 			console.error("No Jira store available");
-			setLoading(false);
+			setIsLoading(false);
 			return;
 		}
 		const store = jiraCtx.state.store;
@@ -93,11 +106,10 @@ function InnerApp() {
 			});
 		} catch (error) {
 			console.error("Failed to send refine message:", error);
-			setLoading(false); // Clear loading on error
+			setIsLoading(false); // Clear loading on error
 		}
 		// Note: Don't clear loading here - let handleRefineResponse handle it
 	};
-
 	const handlePlan = () => {
 		setActiveButton("plan");
 		setShowPlanPanel(true);
@@ -115,7 +127,9 @@ function InnerApp() {
 	const handleRefineResponse = async (data: { newClarifications: any[]; revisedAdditionalContext: string }) => {
 		console.log("handleRefineResponse: starting", data);
 		try {
-			// Note: Loading is already set from handleRefine
+			// Set loading state for the entire operation
+			setIsLoading(true);
+			setIsHandlingRefineResponse(true);
 
 			// Clear existing clarifications by deleting them all
 			if (jiraCtx.state.store?.clarifications) {
@@ -138,8 +152,9 @@ function InnerApp() {
 		} catch (error: any) {
 			console.error("Failed to handle refine response:", error);
 		} finally {
-			// Clear loading state after all operations complete
-			setLoading(false);
+			// Clear loading state only after all operations complete
+			setIsLoading(false);
+			setIsHandlingRefineResponse(false);
 		}
 	};
 
@@ -156,14 +171,14 @@ function InnerApp() {
 						<div className="flex items-center space-x-2">
 							<button
 								onClick={() => {
-									setLoading(true);
+									setIsLoading(true);
 									restoreRefined();
 									setActiveButton("restore");
-									setTimeout(() => setLoading(false), 500); // Small delay for visual feedback
+									setTimeout(() => setIsLoading(false), 500); // Small delay for visual feedback
 								}}
 								className={activeButton === "restore" ? "btn-accent" : "btn-primary"}
 								style={{ fontSize: "0.875rem", width: "6rem" }}
-								disabled={isLoading}
+								disabled={isAnyLoading}
 							>
 								Restore
 							</button>
@@ -171,7 +186,7 @@ function InnerApp() {
 								onClick={handleRefine}
 								className={activeButton === "refine" ? "btn-accent" : "btn-primary"}
 								style={{ fontSize: "0.875rem", width: "6rem" }}
-								disabled={isLoading}
+								disabled={isAnyLoading}
 							>
 								Refine
 							</button>
@@ -182,7 +197,7 @@ function InnerApp() {
 								}}
 								className={activeButton === "plan" ? "btn-accent" : "btn-primary"}
 								style={{ fontSize: "0.875rem", width: "6rem" }}
-								disabled={isLoading}
+								disabled={isAnyLoading}
 							>
 								Plan
 							</button>
@@ -193,7 +208,7 @@ function InnerApp() {
 								}}
 								className={activeButton === "execute" ? "btn-accent" : "btn-primary"}
 								style={{ fontSize: "0.875rem", width: "6rem" }}
-								disabled={isLoading}
+								disabled={isAnyLoading}
 							>
 								Execute
 							</button>
@@ -227,7 +242,7 @@ function InnerApp() {
 			</div>
 
 			{/* Loading Spinner Overlay */}
-			{isLoading && (
+			{isAnyLoading && (
 				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 					<div className="bg-white rounded-lg p-6 flex items-center space-x-4 shadow-lg">
 						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>

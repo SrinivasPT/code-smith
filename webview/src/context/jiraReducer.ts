@@ -1,6 +1,6 @@
 import { Draft } from "immer";
 import type { JiraStore, Clarification } from "../models/model";
-export type State = { store: JiraStore | null; saving?: boolean; externalLoading?: boolean; error?: string | null };
+export type State = { store: JiraStore | null; loading?: boolean; error?: string | null };
 
 export type Action =
 	| { type: "SET_STORE"; store: JiraStore | null }
@@ -10,8 +10,7 @@ export type Action =
 	| { type: "APPLY_REFINEMENT_LOCAL"; modifiedFields: Record<string, any>; author?: string }
 	| { type: "UPDATE_FIELD_LOCAL"; field: string; value: any }
 	| { type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL"; context: string }
-	| { type: "SET_SAVING"; saving: boolean }
-	| { type: "SET_EXTERNAL_LOADING"; loading: boolean }
+	| { type: "SET_LOADING"; loading: boolean }
 	| { type: "SET_ERROR"; error?: string | null }
 	| { type: "RESTORE_REFINED" };
 
@@ -20,7 +19,7 @@ export const jiraReducer = (draft: Draft<State>, action: Action) => {
 		case "SET_STORE":
 			draft.store = action.store;
 			draft.error = null;
-			draft.saving = false;
+			draft.loading = false;
 			return;
 		case "ADD_CLARIFICATION_LOCAL":
 			if (!draft.store) return;
@@ -79,11 +78,8 @@ export const jiraReducer = (draft: Draft<State>, action: Action) => {
 				draft.store.refined[k] = action.modifiedFields[k];
 			}
 			return;
-		case "SET_EXTERNAL_LOADING":
-			draft.externalLoading = action.loading;
-			return;
-		case "SET_SAVING":
-			draft.saving = action.saving;
+		case "SET_LOADING":
+			draft.loading = action.loading;
 			return;
 		case "UPDATE_FIELD_LOCAL":
 			if (!draft.store) return;

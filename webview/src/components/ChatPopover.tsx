@@ -3,7 +3,7 @@ import { useJira } from "../context/JiraContext";
 
 export default function ChatPopover() {
 	const jiraCtx = useJira();
-	const isLoading = jiraCtx.state?.saving || jiraCtx.state?.externalLoading || false;
+	const isLoading = jiraCtx.state?.loading || false;
 	const [open, setOpen] = useState(false);
 	const [messages, setMessages] = useState([{ from: "ai", text: "Do we need mobile login support?", timestamp: new Date() }]);
 	const [input, setInput] = useState("");

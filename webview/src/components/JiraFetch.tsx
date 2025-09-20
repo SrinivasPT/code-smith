@@ -23,7 +23,7 @@ export default function JiraFetch() {
 				onClick={async () => {
 					setFetchError(null);
 					setFetching(true);
-					jiraCtx.setExternalLoading(true);
+					jiraCtx.setLoading(true);
 					try {
 						await jiraService.fetchJiraFromApi(jiraKey);
 						await jiraCtx.setCurrentKey(jiraKey);
@@ -32,7 +32,7 @@ export default function JiraFetch() {
 						console.error("Failed to fetch JIRA item", err);
 					} finally {
 						setFetching(false);
-						jiraCtx.setExternalLoading(false);
+						jiraCtx.setLoading(false);
 					}
 				}}
 				className="btn-primary text-sm"
