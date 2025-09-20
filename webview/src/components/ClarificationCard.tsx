@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useJira } from "../context/JiraContext";
 import Icon from "./Icon";
 
 export default function ClarificationCard({
@@ -12,6 +13,8 @@ export default function ClarificationCard({
 	onChange: (val: string) => void;
 	onDelete?: () => void;
 }) {
+	const jiraCtx = useJira();
+	const isLoading = jiraCtx.state?.saving || jiraCtx.state?.externalLoading || false;
 	const [open, setOpen] = useState(true);
 	const [isFocused, setIsFocused] = useState(false);
 
@@ -39,8 +42,9 @@ export default function ClarificationCard({
 									e.stopPropagation();
 									onDelete();
 								}}
-								className="text-red-500 hover:text-red-700 cursor-pointer p-1 bg-transparent border-none"
+								className="text-red-500 hover:text-red-700 cursor-pointer p-1 bg-transparent border-none disabled:opacity-50 disabled:cursor-not-allowed"
 								title="Delete clarification"
+								disabled={isLoading}
 							>
 								<Icon name="trash" size={16} />
 							</button>
@@ -57,13 +61,14 @@ export default function ClarificationCard({
 			<div className={`overflow-hidden transition-all duration-300 ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
 				<div className="p-3 pt-0">
 					<textarea
-						className="input-field w-full resize-none"
+						className="input-field w-full resize-none disabled:opacity-50 disabled:cursor-not-allowed"
 						rows={10}
 						placeholder="Provide your answer here..."
 						value={answer}
 						onChange={(e) => onChange(e.target.value)}
 						onFocus={() => setIsFocused(true)}
 						onBlur={() => setIsFocused(false)}
+						disabled={isLoading}
 					/>
 					<div className="flex justify-between items-center mt-2">
 						<span className="text-xs text-muted">{answer.length} characters</span>

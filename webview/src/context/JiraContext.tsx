@@ -12,6 +12,7 @@ export const JiraContext = createContext<
 			dispatch: React.Dispatch<Action>;
 			currentKey: string | null;
 			setCurrentKey: (key: string) => Promise<void>;
+			setExternalLoading: (loading: boolean) => void;
 			saveClarification: (args: {
 				question: string;
 				response: string;
@@ -114,11 +115,14 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 	async function updateAdditionalContext(context: string) {
 		if (!currentKey) throw new Error("No current JIRA key set");
-		dispatch({ type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL", context });
+		dispatch({ type: "SET_SAVING", saving: true });
 		try {
+			dispatch({ type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL", context });
 			await jiraService.updateAdditionalContext(currentKey, context);
+			dispatch({ type: "SET_SAVING", saving: false });
 		} catch (err: any) {
 			dispatch({ type: "SET_ERROR", error: String(err?.message || err) });
+			dispatch({ type: "SET_SAVING", saving: false });
 			throw err;
 		}
 	}
@@ -135,6 +139,10 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 	function restoreRefined() {
 		dispatch({ type: "RESTORE_REFINED" });
+	}
+
+	function setExternalLoading(loading: boolean) {
+		dispatch({ type: "SET_EXTERNAL_LOADING", loading });
 	}
 
 	async function deleteClarification(question: string) {
@@ -213,7 +221,6 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 
 	async function addClarificationsFromLLM(clarifications: { question: string; context?: string }[]) {
 		if (!currentKey) throw new Error("No current JIRA key set");
-
 		dispatch({ type: "SET_SAVING", saving: true });
 		try {
 			// Convert to clarifications
@@ -263,6 +270,7 @@ export function JiraProvider({ children }: { children: ReactNode }) {
 				dispatch,
 				currentKey,
 				setCurrentKey,
+				setExternalLoading,
 				saveClarification,
 				deleteClarification,
 				refineJira,

@@ -78,7 +78,7 @@ body {
 	background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 	color: white;
 	font-weight: 600;
-	border-radius: 10px;
+	border-radius: 5px;
 	padding: 0.4rem 0.75rem;
 	border: none;
 	box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
@@ -170,6 +170,22 @@ h2 {
 .text-muted {
 	color: var(--muted);
 }
+
+/* Spinner animation */
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.animate-spin {
+	animation: spin 1s linear infinite;
+}
+
+/* Compact typography */
 
 /* Reduce default spacing for compact feel */
 .compact > * {

@@ -1,6 +1,6 @@
 import { Draft } from "immer";
 import type { JiraStore, Clarification } from "../models/model";
-export type State = { store: JiraStore | null; saving?: boolean; error?: string | null };
+export type State = { store: JiraStore | null; saving?: boolean; externalLoading?: boolean; error?: string | null };
 
 export type Action =
 	| { type: "SET_STORE"; store: JiraStore | null }
@@ -11,6 +11,7 @@ export type Action =
 	| { type: "UPDATE_FIELD_LOCAL"; field: string; value: any }
 	| { type: "UPDATE_ADDITIONAL_CONTEXT_LOCAL"; context: string }
 	| { type: "SET_SAVING"; saving: boolean }
+	| { type: "SET_EXTERNAL_LOADING"; loading: boolean }
 	| { type: "SET_ERROR"; error?: string | null }
 	| { type: "RESTORE_REFINED" };
 
@@ -77,6 +78,9 @@ export const jiraReducer = (draft: Draft<State>, action: Action) => {
 				// @ts-ignore
 				draft.store.refined[k] = action.modifiedFields[k];
 			}
+			return;
+		case "SET_EXTERNAL_LOADING":
+			draft.externalLoading = action.loading;
 			return;
 		case "SET_SAVING":
 			draft.saving = action.saving;

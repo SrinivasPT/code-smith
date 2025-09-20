@@ -37,16 +37,16 @@ export class CommandHandler implements CommandHandlerInterface {
 
 	private async handleRefineMessage(data: JiraStoryData): Promise<void> {
 		try {
-			const clarifications = await this.llmService.getClarifications(data);
+			const refineResponse = await this.llmService.refineWithContext(data);
 			this.webviewManager?.postMessage({
-				type: "clarifications",
-				data: clarifications,
+				type: "refine-response",
+				data: refineResponse,
 			});
 		} catch (error) {
-			console.error("Failed to get clarifications:", error);
+			console.error("Failed to refine with context:", error);
 			this.webviewManager?.postMessage({
 				type: "error",
-				message: error instanceof Error ? error.message : "Failed to generate clarifications from LLM",
+				message: error instanceof Error ? error.message : "Failed to refine story with LLM",
 			});
 		}
 	}

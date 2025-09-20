@@ -16,7 +16,7 @@ declare global {
 	}
 }
 
-// Add this line to acquire the VS Code API
+// Acquire VS Code API once at module level
 const vscode = window.acquireVsCodeApi();
 
 export default function App() {
@@ -30,8 +30,13 @@ export default function App() {
 function InnerApp() {
 	const jiraCtx = useJira();
 	const [showPlanPanel, setShowPlanPanel] = useState(false);
+	const [activeButton, setActiveButton] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const { restoreRefined, addClarificationsFromLLM } = jiraCtx;
+	const [isHandlingRefineResponse, setIsHandlingRefineResponse] = useState(false);
+
+	const { restoreRefined, addClarificationsFromLLM, updateAdditionalContext } = jiraCtx;
+	const isAnyLoading = isLoading || jiraCtx.state?.saving || jiraCtx.state?.externalLoading || false;
 
 	useEffect(() => {
 		const messageHandler = (event: MessageEvent) => {
@@ -40,10 +45,17 @@ function InnerApp() {
 				case "clarifications":
 					addClarificationsFromLLM(message.data).catch((error) => {
 						console.error("Failed to add clarifications:", error);
+						setIsLoading(false); // Clear loading on error
+					});
+					break;
+				case "refine-response":
+					handleRefineResponse(message.data).catch((error) => {
+						console.error("Failed to handle refine response:", error);
 					});
 					break;
 				case "error":
 					console.error("Extension error:", message.message);
+					setIsLoading(false); // Clear loading on error
 					// You could show a toast or alert here
 					alert(`Error: ${message.message}`);
 					break;
@@ -52,39 +64,98 @@ function InnerApp() {
 
 		window.addEventListener("message", messageHandler);
 		return () => window.removeEventListener("message", messageHandler);
-	}, [addClarificationsFromLLM]);
+	}, [addClarificationsFromLLM, updateAdditionalContext]);
+
+	// Watch for JiraContext saving and external loading states
+	useEffect(() => {
+		if (jiraCtx.state.saving || jiraCtx.state.externalLoading) {
+			setIsLoading(true);
+		} else if (!isHandlingRefineResponse) {
+			// Only clear loading when JiraContext operations complete AND we're not handling a refine response
+			setIsLoading(false);
+		}
+	}, [jiraCtx.state.saving, jiraCtx.state.externalLoading, isHandlingRefineResponse]);
 
 	const handleRefine = async () => {
+		setActiveButton("refine");
+		setIsLoading(true);
 		setShowPlanPanel(false);
 		if (!jiraCtx.state.store) {
 			console.error("No Jira store available");
+			setIsLoading(false);
 			return;
 		}
 		const store = jiraCtx.state.store;
 		const summary = store.refined?.summary || store.original?.fields?.summary || "";
 		const description = store.refined?.description || store.original?.fields?.description || "";
 		const acceptanceCriteria = store.refined?.customfield_10601 || store.original?.fields?.customfield_10601 || [];
-		
-		vscode.postMessage({
-			type: "refine",
-			data: {
-				summary,
-				description,
-				acceptanceCriteria: Array.isArray(acceptanceCriteria) ? acceptanceCriteria : [],
-			},
-		});
-	};
+		const clarifications = store.clarifications || [];
+		const additionalContext = store.additionalContext || "";
 
+		try {
+			// Send message to extension with complete Jira data
+			vscode.postMessage({
+				type: "refine",
+				data: {
+					summary,
+					description,
+					acceptanceCriteria: Array.isArray(acceptanceCriteria) ? acceptanceCriteria : [],
+					clarifications,
+					additionalContext,
+				},
+			});
+		} catch (error) {
+			console.error("Failed to send refine message:", error);
+			setIsLoading(false); // Clear loading on error
+		}
+		// Note: Don't clear loading here - let handleRefineResponse handle it
+	};
 	const handlePlan = () => {
+		setActiveButton("plan");
 		setShowPlanPanel(true);
 	};
 
 	const handleExecute = () => {
+		setActiveButton("execute");
 		// vscode.postMessage({ type: "execute" });
 	};
 
 	const handleClosePlanPanel = () => {
 		setShowPlanPanel(false);
+	};
+
+	const handleRefineResponse = async (data: { newClarifications: any[]; revisedAdditionalContext: string }) => {
+		console.log("handleRefineResponse: starting", data);
+		try {
+			// Set loading state for the entire operation
+			setIsLoading(true);
+			setIsHandlingRefineResponse(true);
+
+			// Clear existing clarifications by deleting them all
+			if (jiraCtx.state.store?.clarifications) {
+				console.log("handleRefineResponse: deleting existing clarifications", jiraCtx.state.store.clarifications.length);
+				for (const clarification of jiraCtx.state.store.clarifications) {
+					await jiraCtx.deleteClarification(clarification.question);
+				}
+			}
+
+			// Update additional context with the revised version
+			console.log("handleRefineResponse: updating additional context");
+			await jiraCtx.updateAdditionalContext(data.revisedAdditionalContext);
+
+			// Add new clarifications if any
+			if (data.newClarifications && data.newClarifications.length > 0) {
+				console.log("handleRefineResponse: adding new clarifications", data.newClarifications.length);
+				await jiraCtx.addClarificationsFromLLM(data.newClarifications);
+			}
+			console.log("handleRefineResponse: completed");
+		} catch (error: any) {
+			console.error("Failed to handle refine response:", error);
+		} finally {
+			// Clear loading state only after all operations complete
+			setIsLoading(false);
+			setIsHandlingRefineResponse(false);
+		}
 	};
 
 	return (
@@ -98,16 +169,47 @@ function InnerApp() {
 							<JiraFetch />
 						</div>
 						<div className="flex items-center space-x-2">
-							<button onClick={restoreRefined} className="btn-primary text-sm w-24">
+							<button
+								onClick={() => {
+									setIsLoading(true);
+									restoreRefined();
+									setActiveButton("restore");
+									setTimeout(() => setIsLoading(false), 500); // Small delay for visual feedback
+								}}
+								className={activeButton === "restore" ? "btn-accent" : "btn-primary"}
+								style={{ fontSize: "0.875rem", width: "6rem" }}
+								disabled={isAnyLoading}
+							>
 								Restore
 							</button>
-							<button onClick={handleRefine} className="btn-primary text-sm w-24">
+							<button
+								onClick={handleRefine}
+								className={activeButton === "refine" ? "btn-accent" : "btn-primary"}
+								style={{ fontSize: "0.875rem", width: "6rem" }}
+								disabled={isAnyLoading}
+							>
 								Refine
 							</button>
-							<button onClick={handlePlan} className="btn-primary text-sm w-24">
+							<button
+								onClick={() => {
+									setActiveButton("plan");
+									setShowPlanPanel(true);
+								}}
+								className={activeButton === "plan" ? "btn-accent" : "btn-primary"}
+								style={{ fontSize: "0.875rem", width: "6rem" }}
+								disabled={isAnyLoading}
+							>
 								Plan
 							</button>
-							<button onClick={handleExecute} className="btn-primary text-sm w-24">
+							<button
+								onClick={() => {
+									setActiveButton("execute");
+									// vscode.postMessage({ type: "execute" });
+								}}
+								className={activeButton === "execute" ? "btn-accent" : "btn-primary"}
+								style={{ fontSize: "0.875rem", width: "6rem" }}
+								disabled={isAnyLoading}
+							>
 								Execute
 							</button>
 						</div>
@@ -138,6 +240,16 @@ function InnerApp() {
 					)}
 				</div>
 			</div>
+
+			{/* Loading Spinner Overlay */}
+			{isAnyLoading && (
+				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+					<div className="bg-white rounded-lg p-6 flex items-center space-x-4 shadow-lg">
+						<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+						<span className="text-gray-700 font-medium">Processing...</span>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

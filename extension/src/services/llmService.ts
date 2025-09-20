@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { JiraStoryData, ClarificationQuestion, LLMServiceInterface } from "../types/interfaces";
+import { JiraStoryData, ClarificationQuestion, LLMServiceInterface, RefineResponse } from "../types/interfaces";
 
 export class LLMService implements LLMServiceInterface {
 	private promptTemplate: string = "";
@@ -99,6 +99,52 @@ Example:
 		}
 	}
 
+	async refineWithContext(data: JiraStoryData): Promise<RefineResponse> {
+		// Check if language model API is available
+		if (!vscode.lm) {
+			throw new Error(
+				"VS Code Language Model API is not available. Please ensure you have GitHub Copilot Chat or another language model extension installed and enabled."
+			);
+		}
+
+		// Get available chat models
+		let model;
+		const gptModels = await vscode.lm.selectChatModels({ family: "gpt-4.1" });
+		model = gptModels[0];
+		// if (gptModels && gptModels.length > 0) {
+		// 	model = gptModels[0];
+		// } else {
+		// 	const allModels = await vscode.lm.selectChatModels();
+		// 	if (!allModels || allModels.length === 0) {
+		// 		throw new Error(
+		// 			"No language models available. Please install and enable GitHub Copilot Chat or another language model extension."
+		// 		);
+		// 	}
+		// 	model = allModels[0];
+		// }
+
+		const prompt = this.buildRefinePrompt(data);
+
+		try {
+			const messages = [new vscode.LanguageModelChatMessage(vscode.LanguageModelChatMessageRole.User, prompt)];
+			const response = await model.sendRequest(messages);
+
+			let content = "";
+			for await (const chunk of response.stream) {
+				content += this.extractContentFromChunk(chunk);
+			}
+
+			if (!content) {
+				throw new Error("No response from language model");
+			}
+
+			return this.parseRefineResponse(content);
+		} catch (error) {
+			console.error("Language model error:", error);
+			throw new Error(`Failed to get response from language model: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+
 	private extractContentFromChunk(chunk: any): string {
 		// Handle different possible chunk formats
 		if (typeof chunk === "string") {
@@ -128,6 +174,60 @@ Example:
 			return clarifications;
 		} catch (parseError) {
 			console.error("Failed to parse LLM response:", content);
+			throw new Error("Invalid response format from language model");
+		}
+	}
+
+	private buildRefinePrompt(data: JiraStoryData): string {
+		const acceptanceCriteriaText = data.acceptanceCriteria.map((ac, i) => `${i + 1}. ${ac}`).join("\n");
+		const clarificationsText = data.clarifications
+			.filter((c) => c.response && c.response.trim())
+			.map((c, i) => `${i + 1}. ${c.question}\n   Answer: ${c.response}`)
+			.join("\n\n");
+
+		return `Analyze the following Jira story and refine it based on the provided clarifications. Your task is to:
+
+1. Consolidate the answered clarifications into the additional context as bulleted points
+2. If additional context already exists, revise it by incorporating the new clarifications
+3. Identify if any new clarifications are needed for remaining ambiguities
+4. Return both the revised additional context and any new clarifications needed
+
+**Story Summary:** ${data.summary}
+
+**Description:** ${data.description}
+
+**Acceptance Criteria:**
+${acceptanceCriteriaText}
+
+**Existing Clarifications (with answers):**
+${clarificationsText || "No answered clarifications yet."}
+
+**Current Additional Context:**
+${data.additionalContext || "No additional context provided yet."}
+
+Please provide a JSON response with the following structure:
+{
+  "revisedAdditionalContext": "The consolidated and revised additional context incorporating all answered clarifications",
+  "newClarifications": [
+    {
+      "question": "New clarification question if needed",
+      "context": "Why this clarification is needed"
+    }
+  ]
+}
+
+If no new clarifications are needed, return an empty array for newClarifications.`;
+	}
+
+	private parseRefineResponse(content: string): RefineResponse {
+		try {
+			const response = JSON.parse(content);
+			return {
+				revisedAdditionalContext: response.revisedAdditionalContext || "",
+				newClarifications: response.newClarifications || [],
+			};
+		} catch (parseError) {
+			console.error("Failed to parse refine response:", content);
 			throw new Error("Invalid response format from language model");
 		}
 	}
