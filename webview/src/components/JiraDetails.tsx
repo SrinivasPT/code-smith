@@ -73,7 +73,7 @@ export default function JiraDetails() {
 		<div className="space-y-4">
 			{/* Card: Title */}
 			<div className="flex items-start justify-between">
-				<h2 className="mt-1 text-lg font-bold text-gray-900 leading-tight">{fields.summary}</h2>
+				<h2 className="mt-1 text-xl text-gray-900 leading-tight">{fields.summary}</h2>
 			</div>
 
 			{/* Card: Description (collapsible) */}

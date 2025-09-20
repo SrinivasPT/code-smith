@@ -14,7 +14,7 @@ export default function JiraFetch() {
 				type="text"
 				placeholder="Enter JIRA key (e.g. PROJ-123)"
 				value={jiraKey}
-				className="border p-2 rounded w-64 text-gray-900 placeholder-gray-500"
+				className="border p-1 rounded w-64 text-gray-900 placeholder-gray-500"
 				onChange={(e) => {
 					setJiraKey(e.target.value);
 				}}
