@@ -7,22 +7,15 @@ import MainContent from "./components/MainContent";
 function InnerApp() {
 	// Initialize hooks
 	useMessageHandler();
-	const { showPlanPanel, activeButton, isLoading, handleRefine, handlePlan, handleExecute, handleRestore, handleClosePlanPanel } =
+	const { activeTab, isLoading, handleRefine, handlePlan, handleExecute, handleRestore, handleClosePlanPanel, handleTabChange } =
 		useAppActions();
 
 	return (
 		<div className="min-h-screen">
 			<div className="container mx-auto px-6 py-8">
-				<Header
-					activeButton={activeButton}
-					isLoading={isLoading}
-					onRestore={handleRestore}
-					onRefine={handleRefine}
-					onPlan={handlePlan}
-					onExecute={handleExecute}
-				/>
+				<Header activeTab={activeTab} onTabChange={handleTabChange} />
 
-				<MainContent showPlanPanel={showPlanPanel} onClosePlanPanel={handleClosePlanPanel} />
+				<MainContent onClosePlanPanel={handleClosePlanPanel} activeTab={activeTab} />
 			</div>
 
 			{/* Loading Spinner Overlay */}

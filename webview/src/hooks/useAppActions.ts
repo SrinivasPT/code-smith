@@ -6,13 +6,13 @@ export const useAppActions = () => {
 	const jiraCtx = useJira();
 	const vscode = useVscodeApi();
 	const [showPlanPanel, setShowPlanPanel] = useState(false);
-	const [activeButton, setActiveButton] = useState<string | null>(null);
+	const [activeTab, setActiveTab] = useState<string>("jira-details");
 
 	const { restoreRefined, setLoading } = jiraCtx;
 	const isLoading = jiraCtx.state?.loading || false;
 
 	const handleRefine = async () => {
-		setActiveButton("refine");
+		setActiveTab("jira-details");
 		setLoading(true);
 		setShowPlanPanel(false);
 		if (!jiraCtx.state.store) {
@@ -47,19 +47,19 @@ export const useAppActions = () => {
 	};
 
 	const handlePlan = () => {
-		setActiveButton("plan");
+		setActiveTab("plan");
 		setShowPlanPanel(true);
 	};
 
 	const handleExecute = () => {
-		setActiveButton("execute");
+		setActiveTab("execute");
 		// vscode.postMessage({ type: "execute" });
 	};
 
 	const handleRestore = () => {
 		setLoading(true);
 		restoreRefined();
-		setActiveButton("restore");
+		setActiveTab("jira-details");
 		setTimeout(() => setLoading(false), 500); // Small delay for visual feedback
 	};
 
@@ -67,14 +67,24 @@ export const useAppActions = () => {
 		setShowPlanPanel(false);
 	};
 
+	const handleTabChange = (tabId: string) => {
+		setActiveTab(tabId);
+		if (tabId === "plan") {
+			setShowPlanPanel(true);
+		} else {
+			setShowPlanPanel(false);
+		}
+	};
+
 	return {
 		showPlanPanel,
-		activeButton,
+		activeTab,
 		isLoading,
 		handleRefine,
 		handlePlan,
 		handleExecute,
 		handleRestore,
 		handleClosePlanPanel,
+		handleTabChange,
 	};
 };

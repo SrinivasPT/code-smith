@@ -1,58 +1,29 @@
 import React from "react";
 import JiraFetch from "./JiraFetch";
+import Tabs from "./Tabs";
 
 interface HeaderProps {
-	activeButton: string | null;
-	isLoading: boolean;
-	onRestore: () => void;
-	onRefine: () => void;
-	onPlan: () => void;
-	onExecute: () => void;
+	activeTab: string;
+	onTabChange: (tabId: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ activeButton, isLoading, onRestore, onRefine, onPlan, onExecute }) => {
+const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
+	const tabs = [
+		{ id: "context", label: "Context" },
+		{ id: "jira-details", label: "Jira Details" },
+		{ id: "plan", label: "Plan" },
+		{ id: "execute", label: "Execute" },
+	];
+
 	return (
 		<div className="mb-6 animate-fade-in">
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between mb-4">
 				<h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-0">Code Smith</h1>
 				<div className="ml-6">
 					<JiraFetch />
 				</div>
-				<div className="flex items-center space-x-2">
-					<button
-						onClick={onRestore}
-						className={activeButton === "restore" ? "btn-accent" : "btn-primary"}
-						style={{ fontSize: "0.875rem", width: "6rem" }}
-						disabled={isLoading}
-					>
-						Restore
-					</button>
-					<button
-						onClick={onRefine}
-						className={activeButton === "refine" ? "btn-accent" : "btn-primary"}
-						style={{ fontSize: "0.875rem", width: "6rem" }}
-						disabled={isLoading}
-					>
-						Refine
-					</button>
-					<button
-						onClick={onPlan}
-						className={activeButton === "plan" ? "btn-accent" : "btn-primary"}
-						style={{ fontSize: "0.875rem", width: "6rem" }}
-						disabled={isLoading}
-					>
-						Plan
-					</button>
-					<button
-						onClick={onExecute}
-						className={activeButton === "execute" ? "btn-accent" : "btn-primary"}
-						style={{ fontSize: "0.875rem", width: "6rem" }}
-						disabled={isLoading}
-					>
-						Execute
-					</button>
-				</div>
 			</div>
+			<Tabs tabs={tabs} activeTab={activeTab} onTabChange={onTabChange} />
 		</div>
 	);
 };

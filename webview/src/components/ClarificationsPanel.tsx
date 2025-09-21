@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import ClarificationCard from "./ClarificationCard";
 import { useJira } from "../context/JiraContext";
-
-interface Clarification {
-	question: string;
-	answer: string;
-}
+import { useVscodeApi } from "../hooks/useVscodeApi";
 
 export default function ClarificationsPanel() {
 	const jiraCtx = useJira();
+	const vscode = useVscodeApi();
+	const { setLoading } = jiraCtx;
+	const isLoading = jiraCtx.state?.loading || false;
 
 	const clarifications: any[] = jiraCtx.state?.store?.clarifications || [];
 
@@ -26,11 +25,49 @@ export default function ClarificationsPanel() {
 	const answeredCount = clarifications.filter((c) => (c.answer || c.response || "").trim().length > 0).length;
 	const progressPercentage = (answeredCount / Math.max(1, clarifications.length)) * 100;
 
+	const handleGenerateClarifications = async () => {
+		setLoading(true);
+		try {
+			if (!jiraCtx.state.store) {
+				console.error("No Jira store available");
+				setLoading(false);
+				return;
+			}
+			const store = jiraCtx.state.store;
+			const summary = store.refined?.summary || store.original?.fields?.summary || "";
+			const description = store.refined?.description || store.original?.fields?.description || "";
+			const acceptanceCriteria = store.refined?.customfield_10601 || store.original?.fields?.customfield_10601 || [];
+			const additionalContext = store.additionalContext || "";
+
+			vscode.postMessage({
+				type: "refine",
+				data: {
+					summary,
+					description,
+					acceptanceCriteria: Array.isArray(acceptanceCriteria) ? acceptanceCriteria : [],
+					clarifications,
+					additionalContext,
+				},
+			});
+		} catch (error) {
+			console.error("Failed to send refine message:", error);
+			setLoading(false);
+		}
+		// Note: Don't clear loading here - let handleRefineResponse handle it
+	};
+
 	return (
 		<div className="space-y-3 compact">
 			<div className="flex items-center justify-between">
 				<h2 className="text-lg font-semibold flex items-center text-gray-900 uppercase">Clarifications</h2>
 				<div className="flex items-center space-x-2">
+					<button
+						onClick={handleGenerateClarifications}
+						disabled={isLoading}
+						className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+					>
+						{isLoading ? "Generating..." : "Generate"}
+					</button>
 					<span className="text-sm text-muted">
 						{answeredCount}/{clarifications.length}
 					</span>

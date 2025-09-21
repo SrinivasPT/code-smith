@@ -10,7 +10,8 @@ export default function PlanPanel({ onClose }: PlanPanelProps) {
 	const jiraCtx = useJira();
 	const store = jiraCtx.state?.store as any;
 	const [userFeedback, setUserFeedback] = useState("");
-	const [isGenerating, setIsGenerating] = useState(false);
+	const { setLoading } = jiraCtx;
+	const isLoading = jiraCtx.state?.loading || false;
 
 	if (!store) {
 		return (
@@ -26,16 +27,16 @@ export default function PlanPanel({ onClose }: PlanPanelProps) {
 	const currentPlan: ExecutionPlan | undefined = store.currentPlan;
 
 	const handleGeneratePlan = async () => {
-		setIsGenerating(true);
+		setLoading(true);
 		try {
 			await jiraCtx.generatePlan(userFeedback.trim() || undefined);
 			setUserFeedback(""); // Clear feedback after successful generation
 		} catch (error) {
 			console.error("Failed to generate plan:", error);
 			// Error will be shown via the context error state
-		} finally {
-			setIsGenerating(false);
+			setLoading(false);
 		}
+		// Note: Don't clear loading here - let the context handle it
 	};
 
 	const handleStepStatusChange = (stepId: string, status: PlanStep["status"]) => {
@@ -112,10 +113,10 @@ export default function PlanPanel({ onClose }: PlanPanelProps) {
 					<h3 className="font-semibold text-gray-900">Code Implementation Plan</h3>
 					<button
 						onClick={handleGeneratePlan}
-						disabled={isGenerating || jiraCtx.state.loading}
+						disabled={isLoading}
 						className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
 					>
-						{isGenerating ? "Generating..." : currentPlan ? "Regenerate Plan" : "Generate Plan"}
+						{isLoading ? "Generating..." : currentPlan ? "Regenerate Plan" : "Generate Plan"}
 					</button>
 				</div>
 
