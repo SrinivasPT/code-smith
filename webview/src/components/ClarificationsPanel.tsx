@@ -59,12 +59,12 @@ export default function ClarificationsPanel() {
 	return (
 		<div className="space-y-3 compact">
 			<div className="flex items-center justify-between">
-				<h2 className="text-lg font-semibold flex items-center text-gray-900 uppercase">Clarifications</h2>
+				<h2 className="text-lg font-semibold flex items-center text-primary-800 uppercase">Clarifications</h2>
 				<div className="flex items-center space-x-2">
 					<button
 						onClick={handleGenerateClarifications}
 						disabled={isLoading}
-						className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+						className="px-3 py-1 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed text-sm font-medium transition-colors"
 					>
 						{isLoading ? "Generating..." : "Generate"}
 					</button>
@@ -131,7 +131,7 @@ export default function ClarificationsPanel() {
 
 			{/* Additional Context */}
 			<div className="mt-4 p-3 bg-white rounded-sm border" style={{ borderColor: "var(--border)" }}>
-				<h3 className="font-semibold text-gray-900 mb-2 uppercase">Additional Context</h3>
+				<h3 className="font-semibold text-primary-800 mb-2 uppercase">Additional Context</h3>
 				<textarea
 					value={jiraCtx.state?.store?.additionalContext || ""}
 					onChange={(e) => {

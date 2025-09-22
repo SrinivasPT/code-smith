@@ -61,9 +61,9 @@ const ContextTab: React.FC = () => {
 	return (
 		<div className="flex h-full">
 			{/* Left sidebar with tabs */}
-			<div className="w-64 bg-gray-100 border-r border-gray-200">
+			<div className="w-64 bg-primary-50 border-r border-primary-200">
 				<div className="p-4">
-					<h3 className="text-lg font-semibold text-gray-900 mb-4">Documentation</h3>
+					<h3 className="text-lg font-semibold text-primary-800 mb-4">Documentation</h3>
 					<div className="space-y-2">
 						{tabs.map((tab) => (
 							<button
@@ -71,8 +71,8 @@ const ContextTab: React.FC = () => {
 								onClick={() => setActiveTab(tab.id)}
 								className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
 									activeTab === tab.id
-										? "bg-blue-100 text-blue-700 border-r-2 border-blue-700"
-										: "text-gray-600 hover:bg-gray-200 hover:text-gray-900"
+										? "bg-primary-100 text-primary-700 border-r-2 border-primary-700"
+										: "text-primary-600 hover:bg-primary-200 hover:text-primary-900"
 								}`}
 							>
 								{tab.label}

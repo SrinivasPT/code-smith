@@ -110,11 +110,11 @@ export default function PlanPanel({ onClose }: PlanPanelProps) {
 			{/* Plan Generation Section */}
 			<div className="p-4 bg-white rounded-lg border" style={{ borderColor: "var(--border)" }}>
 				<div className="flex justify-between items-start mb-3">
-					<h3 className="font-semibold text-gray-900">Code Implementation Plan</h3>
+					<h3 className="font-semibold text-primary-800">Code Implementation Plan</h3>
 					<button
 						onClick={handleGeneratePlan}
 						disabled={isLoading}
-						className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+						className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed text-sm font-medium transition-colors"
 					>
 						{isLoading ? "Generating..." : currentPlan ? "Regenerate Plan" : "Generate Plan"}
 					</button>
@@ -264,17 +264,17 @@ export default function PlanPanel({ onClose }: PlanPanelProps) {
 
 						{/* Execute Button */}
 						{currentPlan && (
-							<div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+							<div className="mt-4 p-3 bg-primary-50 rounded-lg border border-primary-200">
 								<div className="flex justify-between items-center">
 									<div>
-										<h5 className="font-medium text-sm text-blue-900 mb-1">Ready to Execute?</h5>
-										<p className="text-xs text-blue-700">
+										<h5 className="font-medium text-sm text-primary-900 mb-1">Ready to Execute?</h5>
+										<p className="text-xs text-primary-700">
 											Generate a comprehensive prompt for GitHub Copilot to implement this plan
 										</p>
 									</div>
 									<button
 										onClick={handleExecutePlan}
-										className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium"
+										className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 text-sm font-medium transition-colors"
 									>
 										Execute Plan
 									</button>

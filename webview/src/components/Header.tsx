@@ -18,7 +18,7 @@ const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
 	return (
 		<div className="mb-6 animate-fade-in">
 			<div className="flex items-center justify-between mb-4">
-				<h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-0">Code Smith</h1>
+				<h1 className="text-2xl sm:text-4xl font-bold text-primary-800 mb-0">Code Smith</h1>
 				<div className="ml-6">
 					<JiraFetch />
 				</div>

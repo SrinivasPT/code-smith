@@ -18,7 +18,7 @@ export default function RefinementPage() {
 			{/* Left Side: Jira Details */}
 			<div className="space-y-4">
 				<div className="card p-4">
-					<h2 className="text-lg font-semibold mb-3 flex items-center uppercase">Jira Details</h2>
+					<h2 className="text-lg font-semibold mb-3 flex items-center uppercase text-primary-800">Jira Details</h2>
 					<JiraDetails />
 				</div>
 			</div>

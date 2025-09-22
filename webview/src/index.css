@@ -5,11 +5,11 @@
 
 /* --- Light / Silver global theme --- */
 :root {
-	--bg: #f7f7f8; /* soft white */
+	--bg: #f0f7ff; /* light blue background */
 	--panel: #ffffff; /* card background */
-	--muted: #8f9094; /* muted text */
-	--border: #e6e7ea; /* subtle border */
-	--accent: #4aa3e8; /* subtle blue accent */
+	--muted: #6b7280; /* muted text */
+	--border: #c5e6ff; /* subtle blue border */
+	--accent: #4aa3e8; /* primary blue accent */
 }
 
 html,
@@ -49,7 +49,7 @@ body {
 	background: var(--panel);
 	border-radius: 5px;
 	border: 1px solid var(--border);
-	box-shadow: 0 6px 18px rgba(18, 22, 31, 0.06);
+	box-shadow: 0 6px 18px rgba(74, 163, 232, 0.08);
 }
 
 /* Buttons */
