@@ -1,0 +1,81 @@
+name: CI
+
+on:
+    pull_request:
+        branches: [main]
+
+jobs:
+    typecheck:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [18.x]
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            - name: Typecheck extension
+              working-directory: ./extension
+              run: |
+                  npm ci
+                  npx tsc --noEmit -p ./
+
+            - name: Typecheck webview
+              working-directory: ./webview
+              run: |
+                  npm ci
+                  npx tsc --noEmit -p ./
+
+    build:
+        needs: typecheck
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [18.x]
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
+
+            - name: Install & build extension (TypeScript)
+              working-directory: ./extension
+              run: |
+                  npm ci
+                  npm run compile
+
+            - name: Install & build webview
+              working-directory: ./webview
+              run: |
+                  npm ci
+                  npm run build
+
+            - name: Run lint (extension) if defined
+              working-directory: ./extension
+              run: |
+                  npm run lint --if-present || echo "No lint script in extension"
+
+            - name: Run lint (webview) if defined
+              working-directory: ./webview
+              run: |
+                  npm run lint --if-present || echo "No lint script in webview"
+
+            - name: Run extension tests (if present)
+              working-directory: ./extension
+              run: |
+                  npm run test --if-present
+
+            - name: Run webview tests (if present)
+              working-directory: ./webview
+              run: |
+                  npm run test --if-present

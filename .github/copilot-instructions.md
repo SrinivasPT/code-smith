@@ -58,66 +58,84 @@ These conventions are used throughout the repo — Copilot should follow them wh
     -   Keep file names aligned with exported symbol names: e.g., `PlanGenerationService.ts` exports `PlanGenerationService`.
     -   Prefer explicit exports (named exports) for most modules; use default exports only for React components when convenient.
 
--   Comments and documentation
+## GitHub Copilot + Project Instructions
 
-    -   Every exported public function or class should have a short JSDoc comment describing inputs, outputs, and error modes.
-    -   Add inline comments for non-obvious logic, especially around message contracts and async LLM flows.
+Purpose: provide explicit, actionable guidance so GitHub Copilot (and other AI assistants) can give higher-quality, context-aware suggestions for contributors working on this repository.
 
--   Tests
-    -   Add unit tests for services and complex utilities. Keep tests small and deterministic.
+This file contains the canonical project overview and rules Copilot should follow. It is intentionally written for both a human reader and an automated assistant.
 
-## Contribution guidelines (helpful for Copilot to suggest PRs)
+---
 
-These guidelines should help contributors produce consistent PRs that Copilot can emulate.
+## 1) High-level project summary
 
--   Branching and commits
+-   Repo contains a VS Code extension under `extension/` and a companion React + Vite webview under `webview/`.
+-   Main goal: help developers refine Jira stories into reproducible code plans and automated execution flows using LLM-driven features (clarifications, plan generation, execution helpers, and refinement).
 
-    -   Use feature branches named `feat/<short-description>` or `fix/<short-description>`.
-    -   Keep commits focused and atomic; write clear commit messages with a short summary and optional body.
+## 2) Important locations (what changes where)
 
--   Pull requests
+-   `extension/` — TypeScript extension code (activation, command registration, message handlers, services that call LLMs).
+    -   Key files: `src/extension.ts`, `src/index.ts`, `src/handlers/`, `src/managers/webviewManager.ts`, `src/services/`, `src/types/`, `src/prompts/`.
+-   `webview/` — React + Vite app used inside the extension webview.
+    -   Key areas: `src/components/`, `src/services/`, `src/context/`, `src/hooks/`, `db.json` for mock data and `scripts/save-clarification.js` for offline flows.
 
-    -   Target the `main` branch via a pull request. Include a short description of the change, relevant context, and testing steps.
-    -   Small PRs are preferred. If a PR touches many files, add a design note in the description.
+## 3) How Copilot should reason when editing or suggesting code
 
--   Code review
+-   Prefer TypeScript-first solutions. Keep `strict` typing and avoid `any` unless there is a migration comment.
+-   Follow separation of concerns: extension activation vs message handling vs LLM orchestration vs UI rendering.
+-   When adding functionality, wire up these pieces:
+    1. Types in `extension/src/types` (or `webview/src/models`).
+    2. Small service in `src/services` that encapsulates external calls.
+    3. Command registration in `extension/src/extension.ts` and handler in `src/handlers`.
+    4. UI components in `webview/src/components` and hooks in `webview/src/hooks`.
 
-    -   Include unit tests for new behavior where applicable.
-    -   Ensure TypeScript compiles and linting passes. Run the extension locally and smoke-test the main flows (open webview, trigger a sample command).
+## 4) Coding style & conventions (for Copilot suggestions)
 
--   Style and tooling
+-   Naming: camelCase for variables/functions; PascalCase for types/components.
+-   Exports: prefer named exports. Default exports allowed for React components only when it simplifies imports.
+-   JSDoc: every exported public class/function should have a brief JSDoc describing inputs, outputs and error modes.
+-   Tests: provide unit tests for services and non-trivial logic. Tests should be deterministic and fast.
 
-    -   Respect existing ESLint and Prettier settings if present. If the project doesn't include them, keep code style consistent with the rest of the repo.
+## 5) Message contracts and prompts
 
--   Accessibility and UX
-    -   Webview UI should follow basic accessibility practices: semantic HTML, focus management for modals/popovers, and readable text contrast.
+-   Webview ↔ Extension: use structured JSON messages with `type` and `payload`. Example: `{ type: 'clarification.request', payload: { question: string } }`.
+-   Keep message type names stable. Add new message types to `src/types/interfaces.ts` and update both extension and webview.
+-   Keep prompts and prompt templates in `src/prompts/`. Any change to prompts should include a small unit test that verifies template substitution.
 
-## Message contract & integration notes
+## 6) When Copilot should ask clarifying questions
 
--   Webview <-> Extension messaging
+-   If a requested change affects message contracts, project-wide types, or public APIs, prefer asking the developer for clarification rather than making assumptions.
+-   If a change touches both `extension/` and `webview/`, request confirmation about the message contract or create a minimal compatibility shim and add a TODO comment.
 
-    -   Use structured JSON messages with a `type` field and a `payload` object. Examples: `{ type: 'clarification.request', payload: { question: string } }`.
-    -   Common message types: 'refine', 'generatePlan', 'refine-response', 'planGenerated', 'error'.
-    -   Keep message names stable. Add new message types to a shared `types` file and update both sides.
+## 7) Pull request & commit guidance
 
--   LLM usage
-    -   Keep prompts and prompt templates in `src/prompts` files (they already exist). When changing prompts, include unit tests that validate the substitution behavior.
+-   Branch naming: `feat/<short>`, `fix/<short>`, `chore/<short>`.
+-   PRs should include: short description, testing steps, list of files changed, and any manual test instructions (e.g., how to open the webview).
 
-## Helpful tips for Copilot suggestions
+## 8) Quick-start developer workflow (human-oriented)
 
--   When adding features, wire up these pieces:
+1. Run `npm install` inside both `extension/` and `webview/`.
+2. From `extension/` run `npm run compile` (or `npm run watch`).
+3. From `webview/` run `npm run dev` to start the Vite dev server.
+4. For offline or demo data, run `npx json-server db.json` from the `webview/` folder.
 
-    1.  Add/extend TypeScript types in `src/types/interfaces.ts`.
-    2.  Create or update a service in `src/services` that encapsulates logic.
-    3.  Expose commands in `src/extension.ts` and wire handlers in `src/handlers`.
-    4.  If UI is needed, add components under `webview/src/components` and any hooks under `webview/src/hooks`.
+## 9) Helpful tips for Copilot output
 
--   For changes touching both extension and webview, ensure message contracts are updated and both sides are tested manually in-browser and via unit tests when possible.
+-   When producing changes, include small tests and update types. If you add a new message type, update `src/types` and both sides of the messaging code.
+-   Avoid wide-reaching refactors without tests. If you perform a refactor, add a short unit-test that proves behavior parity.
+-   For prompt changes, add a test in `extension/src/services/__tests__` that asserts expected substitutions.
 
-## Quick-start for contributors
+## 10) Problems and edge-cases Copilot should consider
 
-1. Install dependencies for both the extension and webview (run `npm install` in each folder where `package.json` exists).
-2. From the extension folder, compile TypeScript: `npm run compile` (or `npm run watch` for auto-recompile).
-3. From the webview folder, run the dev server: `npm run dev` (starts Vite dev server, usually on localhost:5173).
-4. For standalone webview development, use `npm run save-clarification` or start json-server with `npx json-server db.json`.
-5. Open the extension in VS Code debug mode or install it to test the full integration.
+-   Null/missing payloads in messages: validate inputs and always return helpful error messages.
+-   Backwards compatibility across message versions: prefer additive changes and optional properties.
+-   Long-running LLM calls: add timeouts and user-facing progress states in the webview.
+
+## 11) How to use these docs with GitHub Copilot
+
+-   For best results, include explicit references in your prompts: "Follow `.github/copilot-instructions.md` and use the prompt template in `docs/COPILOT_PROMPTS.md`."
+-   Open key docs in your editor before using Copilot to increase context availability.
+-   After Copilot suggests changes, run local tests (e.g., `npm test` in extension) and CI to validate.
+
+---
+
+If you (human) need a shorter onboarding for other devs or a library of ready-to-use Copilot prompts, see `docs/copilot/README.md` and `docs/COPILOT_PROMPTS.md` in this repo.

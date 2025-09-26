@@ -23,7 +23,8 @@
 	},
 	"scripts": {
 		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./"
+		"watch": "tsc -watch -p ./",
+		"test": "node scripts/test-prompts.js"
 	},
 	"devDependencies": {
 		"@types/node": "^24.5.0",

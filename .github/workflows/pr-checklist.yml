@@ -1,0 +1,32 @@
+name: PR Checklist
+
+on:
+    pull_request:
+        types: [opened, synchronize, reopened]
+
+jobs:
+    post-checklist:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Post PR checklist comment
+              uses: peter-evans/create-or-update-comment@v3
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  issue-number: ${{ github.event.pull_request.number }}
+                  body: |
+                      ## Automated PR checklist
+
+                      Please use this checklist to verify your PR meets repository expectations. See `CONTRIBUTING.md` for details.
+
+                      - [ ] I have read `.github/copilot-instructions.md` and `docs/DEVELOPER_ONBOARDING.md`.
+                      - [ ] TypeScript builds for both `extension/` and `webview/` without errors.
+                      - [ ] I updated/added message types in `extension/src/types/interfaces.ts` when the change affects messaging.
+                      - [ ] Prompts changed or added are in `extension/src/prompts` and have a small template test (if applicable).
+                      - [ ] I added unit tests for new behavior and they pass locally.
+                      - [ ] External calls (LLMs / network) are mocked in unit tests.
+                      - [ ] I included a brief testing/integration note for manual reviewers (how to run the flows).
+
+                      _If you have completed these items, mark them in your PR description or check them here._
